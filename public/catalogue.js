@@ -78,3 +78,11 @@ function updateProductCount() {
     elecCount.textContent = `${elecProducts.length} articles`;
   }
 }
+
+// Wishlist button toggle
+document.querySelectorAll('.wishlist-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    this.classList.toggle('active');
+  });
+});

@@ -43,16 +43,17 @@ body.elec {
   padding: 0;
 }
 
-html {
+html, body {
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   font-family: var(--fb);
   background: var(--bg);
   color: var(--text);
-  height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
   transition: background var(--t), color var(--t);
 }
 

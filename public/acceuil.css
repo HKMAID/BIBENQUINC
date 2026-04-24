@@ -20,9 +20,9 @@
 
 .landing-body {
   background: var(--accent);
-  width: 100%;
   min-height: 100dvh;
   height: 100%;
+  width: 100%;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -41,7 +41,7 @@
   width: 100%;
   height: 100%;
   background: var(--accent);
-  border-radius: 0;
+  border-left: none !important; /* eliminer la bordure blanche à gauche*/
   box-shadow: var(--sh-lg);
   overflow: hidden;
 }
@@ -224,6 +224,7 @@
 
   .landing-split {
     flex-direction: column;
+    border: none;
   }
 
   .landing-left,
@@ -240,27 +241,80 @@
   }
 }
 
+@media (max-width: 900px) {
+  .landing-app {
+    padding: 12px;
+    margin: 0;
+  }
+
+  .landing-split {
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .landing-left,
+  .landing-right {
+    padding: 32px 24px;
+    margin: 0;
+    border: none;
+  }
+
+  .landing-logo {
+    transform: scale(1.2);
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+  }
+
+  .landing-title {
+    font-size: 36px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+  }
+}
+
 @media (max-width: 600px) {
   .landing-left {
     padding: 24px 16px;
+    margin: 0;
+    border: none;
+    outline: none;
   }
 
   .landing-right {
     padding: 24px 16px;
-    clip-path: inset(0 0 0 0 round 30px 0 0 30px);
+    margin: 0;
+    border: none;
+    outline: none;
   }
 
   .landing-title {
     font-size: 28px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
   }
 
   .landing-desc {
     font-size: 16px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
   }
 
   .landing-btn {
     padding: 14px 24px;
     font-size: 14px;
+    margin: 0;
+    border: none;
+    outline: none;
   }
 
   .landing-login-btn {
@@ -268,6 +322,8 @@
     right: 12px;
     padding: 8px 14px;
     font-size: 12px;
+    border: none;
+    outline: none;
   }
 }
 
