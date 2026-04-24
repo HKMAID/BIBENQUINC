@@ -13,7 +13,7 @@
 <body>
 
 <div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;">
-    <a href="acceuil.php" class="back-link">← Retour à l'acceuil</a>
+    <a href="index.php" class="back-link">← Retour à l'acceuil</a>
 
     <div class="auth-page-card">
         <div class="auth-page-header">
@@ -43,6 +43,9 @@
         </div>
     </div>
 </div>
-
+<footer class="site-footer">
+      <p><a href="contact.php">Contact</a></p>
+      <p>&copy; 2026 BibenQuinc. Tous droits réservés.</p>
+</footer>
 </body>
 </html>

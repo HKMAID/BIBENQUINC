@@ -122,6 +122,7 @@ function productCard($p) {
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="catalogue.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body<?= $is_elec ? ' class="elec"' : '' ?>>
@@ -183,7 +184,7 @@ function productCard($p) {
     <!-- PAGE : Quincaillerie -->
     <div class="page" id="page-quinc">
       <div class="page-inner">
-        <aside class="sidebar">
+        <div class="sidebar">
           <h2>Catégories</h2>
           <ul>
             <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>" class="<?= $sub_cat === '' ? 'active' : '' ?>">Tous les produits</a></li>
@@ -194,7 +195,7 @@ function productCard($p) {
             <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;sub_cat=jardinage" class="<?= $sub_cat === 'jardinage' ? 'active' : '' ?>">Jardinage</a></li>
             <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;sub_cat=serrurerie" class="<?= $sub_cat === 'serrurerie' ? 'active' : '' ?>">Serrurerie</a></li>
           </ul>
-        </aside>
+        </div>
         <div class="main-content">
           <div class="page-header">
             <h1>Quincaillerie générale<small id="product-count-quinc"><?= count($quinc_products) ?> articles</small></h1>
@@ -257,7 +258,7 @@ function productCard($p) {
     <!-- PAGE : Électricité -->
     <div class="page" id="page-elec">
       <div class="page-inner">
-        <aside class="sidebar">
+        <div class="sidebar">
           <h2>Catégories</h2>
           <ul>
             <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>" class="<?= $sub_cat === '' ? 'active' : '' ?>">Tous les produits</a></li>
@@ -268,7 +269,7 @@ function productCard($p) {
             <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;sub_cat=projecteurs" class="<?= $sub_cat === 'projecteurs' ? 'active' : '' ?>">Projecteurs</a></li>
             <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;sub_cat=comptage" class="<?= $sub_cat === 'comptage' ? 'active' : '' ?>">Comptage</a></li>
           </ul>
-        </aside>
+        </div>
         <div class="main-content">
           <div class="page-header">
             <h1>Électricité <small id="product-count-elec"><?= count($elec_products) ?> articles</small></h1>
@@ -355,5 +356,31 @@ function productCard($p) {
 
 <script src="script.js"></script>
 <script src="catalogue.js" defer></script>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-section">
+      <h3>BibenQuinc</h3>
+      <p>Votre partenaire de confiance pour la quincaillerie et l'électricité en Algérie.</p>
+    </div>
+    <div class="footer-section">
+      <h3>Contact</h3>
+      <p>📞 07 92 97 61 28</p>
+      <p>✉️ contact@bibenquinc.dz</p>
+      <p>📍 Ouzellaguen, Béjaia, Algérie</p>
+    </div>
+    <div class="footer-section">
+      <h3>Liens rapides</h3>
+      <p><a href="catalogue.php">Catalogue</a></p>
+      <p><a href="contact.php">Contact</a></p>
+      <p><a href="cnx.php">Connexion</a></p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 BibenQuinc. Tous droits réservés.</p>
+  </div>
+</footer>
+
 </body>
 </html>

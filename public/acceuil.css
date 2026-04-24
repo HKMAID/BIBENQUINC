@@ -20,9 +20,9 @@
 
 .landing-body {
   background: var(--accent);
+  width: 100%;
   min-height: 100dvh;
   height: 100%;
-  width: 100%;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -237,6 +237,37 @@
 
   .landing-title {
     font-size: 36px;
+  }
+}
+
+@media (max-width: 600px) {
+  .landing-left {
+    padding: 24px 16px;
+  }
+
+  .landing-right {
+    padding: 24px 16px;
+    clip-path: inset(0 0 0 0 round 30px 0 0 30px);
+  }
+
+  .landing-title {
+    font-size: 28px;
+  }
+
+  .landing-desc {
+    font-size: 16px;
+  }
+
+  .landing-btn {
+    padding: 14px 24px;
+    font-size: 14px;
+  }
+
+  .landing-login-btn {
+    top: 12px;
+    right: 12px;
+    padding: 8px 14px;
+    font-size: 12px;
   }
 }
 

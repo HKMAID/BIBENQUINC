@@ -46,7 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;">
-    <a href="index.php" class="back-link">← Retour au catalogue</a>
+    <a href="catalogue.php" class="back-link">← Retour au catalogue</a>
+
+
+
+
+
 
     <div class="auth-page-card">
         <?php if ($flash && $flash['type'] === 'success'): ?>
@@ -84,5 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script defer src="js/auth-form.js"></script>
+
+<footer class="site-footer">
+      <p><a href="contact.php">Contact</a></p>
+      <p>&copy; 2026 BibenQuinc. Tous droits réservés.</p>
+</footer>
 </body>
 </html>

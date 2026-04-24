@@ -112,5 +112,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script defer src="js/auth-form.js"></script>
+
+<footer class="site-footer">
+      <p><a href="contact.php">Contact</a></p>
+      <p>&copy; 2026 BibenQuinc. Tous droits réservés.</p>
+</footer>
+
 </body>
 </html>
