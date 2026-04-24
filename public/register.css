@@ -1,11 +1,9 @@
 body {
   overflow: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   min-height: 100vh;
   background: var(--bg);
-  padding-bottom: 50px;
 }
 
 form h2 {
@@ -14,14 +12,14 @@ form h2 {
 
 .auth-page-card {
   width: 100%;
-  max-width: 640px; /* Élargi pour les deux colonnes (3 lignes * 2 cols) */
+  max-width: 640px;
   background: var(--surface);
   border-radius: var(--r-lg);
   box-shadow: var(--sh-lg);
   border: 1px solid var(--border);
   overflow: hidden;
   animation: fadeUp .45s ease both;
-  margin: 20px auto;
+  margin: 40px auto;
 }
 
 .auth-page-card .auth-form {
@@ -102,17 +100,15 @@ form h2 {
 }
 
 body .site-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
   width: 100%;
   background: var(--header-bg);
-  padding: 18px 32px;
+  padding: 16px 32px;
   border-top: 2px solid var(--accent);
   display: flex;
   justify-content: center;
   gap: 28px;
   align-items: center;
+  margin-top: auto;
 }
 
 body .site-footer p {

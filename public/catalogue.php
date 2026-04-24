@@ -96,11 +96,6 @@ function productCard($p) {
             <div class=\"price\">{$fmt} <span>DA</span></div>
         </div>
         <div class=\"actions\">
-            <div class=\"quantity\">
-                <button type=\"button\" onclick=\"adjustQty(this,-1)\">−</button>
-                <input type=\"text\" value=\"1\" readonly>
-                <button type=\"button\" onclick=\"adjustQty(this,1)\">+</button>
-            </div>
             <button class=\"add-btn\"
                     data-name=\"{$name}\"
                     data-price=\"{$price}\"
@@ -325,10 +320,14 @@ function productCard($p) {
             <?php endif; ?>
           </div>
           <?php endif; ?>
-        </div>
-      </div>
-    </div>
+        </div> <!-- End main-content -->
+      </div> <!-- End page-inner -->
+    </div> <!-- End page-elec -->
   </div><!-- /h-pager -->
+
+  <footer class="site-footer">
+    <p>&copy; 2026 BibenQuinc. Tous droits réservés.</p>
+  </footer>
 </div><!-- /app -->
 
 <!-- Swipe hint -->
@@ -356,31 +355,6 @@ function productCard($p) {
 
 <script src="script.js"></script>
 <script src="catalogue.js" defer></script>
-
-<!-- Footer -->
-<footer class="site-footer">
-  <div class="footer-content">
-    <div class="footer-section">
-      <h3>BibenQuinc</h3>
-      <p>Votre partenaire de confiance pour la quincaillerie et l'électricité en Algérie.</p>
-    </div>
-    <div class="footer-section">
-      <h3>Contact</h3>
-      <p>📞 07 92 97 61 28</p>
-      <p>✉️ contact@bibenquinc.dz</p>
-      <p>📍 Ouzellaguen, Béjaia, Algérie</p>
-    </div>
-    <div class="footer-section">
-      <h3>Liens rapides</h3>
-      <p><a href="catalogue.php">Catalogue</a></p>
-      <p><a href="contact.php">Contact</a></p>
-      <p><a href="cnx.php">Connexion</a></p>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <p>&copy; 2026 BibenQuinc. Tous droits réservés.</p>
-  </div>
-</footer>
 
 </body>
 </html>

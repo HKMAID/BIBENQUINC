@@ -61,6 +61,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
 }
 
 /* ══ Header ══ */
@@ -72,7 +73,8 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  height: 64px;
+  min-height: 64px;
+  height: auto;
   flex-shrink: 0;
   position: relative;
   z-index: 200;
