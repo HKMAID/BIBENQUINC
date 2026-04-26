@@ -1,5 +1,11 @@
 <?php
 session_start();
+require_once __DIR__ . '/includes/session.php';
+
+initSession();
+$authUser = currentUser();
+$authName = $authUser ? trim(($authUser['firstname'] ?? '') . ' ' . ($authUser['lastname'] ?? '')) : '';
+$authName = $authName !== '' ? $authName : ($authUser['email'] ?? '');
 // Page de contact - BibenQuinc
 $nom   = $_SESSION['nom']   ?? $_SESSION['prenom'] ?? 'Client';
 $email = $_SESSION['email'] ?? '';
@@ -20,14 +26,33 @@ $email = $_SESSION['email'] ?? '';
 <body class="contact-body">
   <div class="contact-app">
 
-    <a href="cnx.php" class="contact-login-btn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-      Connexion
+    <!-- Bouton retour -->
+    <a href="catalogue.php" class="contact-back-btn" title="Retour au catalogue">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Retour
     </a>
 
-    <div class="contact-split">
+    <?php if ($authUser): ?>
+    <!-- User dropdown si connecté -->
+    <div class="user-menu">
+      <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
+        <?= htmlspecialchars($authName, ENT_QUOTES) ?>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="profile.php">Mon profil</a>
+        <a href="pref.php">Mes préférences</a>
+        <a href="catalogue.php">Catalogue</a>
+        <a href="logout.php">Déconnexion</a>
+      </div>
+    </div>
+    <?php else: ?>
+    <a href="cnx.php" class="contact-login-btn">Connexion</a>
+    <?php endif; ?>
 
-      <!-- Panneau gauche -->
+    <div class="contact-split">
       <div class="contact-left">
         <div class="contact-logo-container">
 
@@ -70,6 +95,9 @@ $email = $_SESSION['email'] ?? '';
                 <option value="">Sélectionnez un sujet</option>
                 <option value="reclam">Réclamation</option>
                 <option value="support">Support technique</option>
+                <option value="info">Demande d'information</option>
+                <option value="suggestion">Suggestion d'amélioration</option>
+                <option value="partenariat">Partenariat</option>
                 <option value="autre">Autre</option>
               </select>
             </div>
@@ -137,6 +165,32 @@ document.getElementById('contact-form').addEventListener('submit', async functio
   } finally {
     submitBtn.disabled = false;
     submitBtn.innerHTML = originalText;
+  }
+});
+</script>
+
+<script>
+// User menu toggle (same as catalogue)
+function toggleUserMenu(e) {
+  e.preventDefault();
+  const btn = document.getElementById('userMenuBtn');
+  const dropdown = document.getElementById('userDropdown');
+  if (btn && dropdown) {
+    dropdown.classList.toggle('open');
+    btn.classList.toggle('active');
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const userMenu = document.querySelector('.user-menu');
+  if (userMenu && !userMenu.contains(e.target)) {
+    const dropdown = document.getElementById('userDropdown');
+    const btn = document.getElementById('userMenuBtn');
+    if (dropdown) {
+      dropdown.classList.remove('open');
+      btn.classList.remove('active');
+    }
   }
 });
 </script>

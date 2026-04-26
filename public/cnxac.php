@@ -12,8 +12,9 @@
 </head>
 <body>
 
-<div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;">
+<div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;margin-top: 20px">
     <a href="index.php" class="back-link">← Retour à l'acceuil</a>
+    
 
     <div class="auth-page-card">
         <div class="auth-page-header">

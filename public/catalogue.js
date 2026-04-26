@@ -48,6 +48,25 @@ function onRadioChange(cat) {
   window.location.href = url.toString();
 }
 
+// Sort menu toggle
+function toggleSortMenu(btn) {
+  btn.classList.toggle('active');
+  // Toggle .open on the sort-menu sibling
+  const sortMenu = btn.nextElementSibling;
+  if (sortMenu && sortMenu.classList.contains('sort-menu')) {
+    sortMenu.classList.toggle('open');
+  }
+}
+
+// Close sort menu when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-box')) {
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+  }
+});
+
 // Page navigation
 function goToPage(page) {
   const hPager = document.getElementById('hPager');

@@ -28,13 +28,27 @@ function adjustQty(btn, delta) {
   input.value = newVal;
 }
 
+function triggerAddButtonAnimation(btn) {
+  if (!btn) return;
+  btn.classList.remove('is-added');
+  btn.classList.add('is-adding');
+
+  setTimeout(() => {
+    btn.classList.remove('is-adding');
+    btn.classList.add('is-added');
+    setTimeout(() => btn.classList.remove('is-added'), 550);
+  }, 130);
+}
+
 /* ══ Cart – add item ══ */
 function addToCart(btn) {
   const name = btn.dataset.name;
   const price = +btn.dataset.price;
   const image = btn.dataset.image || '';
   const nbDispo = +btn.dataset.nbdispo || 999;
-  const qty = +btn.closest('.actions').querySelector('input').value;
+  const qtyInput = btn.closest('.actions')?.querySelector('input');
+  const rawQty = qtyInput ? parseInt(qtyInput.value, 10) : 1;
+  const qty = Math.max(1, Math.min(nbDispo, Number.isNaN(rawQty) ? 1 : rawQty));
 
   if (qty > nbDispo) {
     alert(`Quantité demandée dépasse le stock disponible (${nbDispo})`);
@@ -56,6 +70,7 @@ function addToCart(btn) {
   }
   saveCart();
   updateCartUI();
+  triggerAddButtonAnimation(btn);
 
   const cc = document.getElementById('cartCount');
   if (cc) { cc.classList.add('ping'); setTimeout(() => cc.classList.remove('ping'), 250); }
@@ -132,7 +147,7 @@ function updateCartUI() {
   if (!c) return;
 
   if (!cart.length) {
-    c.innerHTML = `<div class="drawer-empty"><br><br><br><br><br><br><br>Votre panier est vide.</div>`;
+    c.innerHTML = `<div class="drawer-empty">Votre panier est vide.</div>`;
     return;
   }
 
@@ -140,21 +155,19 @@ function updateCartUI() {
     const safeName = i.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
     return `
     <div class="cart-item" id="ci-${encodeURIComponent(i.name)}">
-      <div class="ci-info">
-        <div class="ci-name">${i.name}</div>
-        <div class="ci-unit">${fmt(i.price)} DA / unité</div>
+      <div class="cart-item-image">
+        <img src="${i.image}" alt="">
       </div>
-      <div class="ci-right">
-        <div class="ci-stepper">
-          <button type="button" class="ci-step-btn" onclick="changeItemQty('${safeName}', -1)">−</button>
-          <input class="ci-qty-input" type="number" min="1" max="${i.nbDispo || 999}" value="${i.qty}"
-                 onchange="setItemQty('${safeName}', this.value)"
-                 onblur="setItemQty('${safeName}', this.value)">
-          <button type="button" class="ci-step-btn" onclick="changeItemQty('${safeName}', 1)"${i.qty >= (i.nbDispo || 999) ? ' disabled' : ''}>+</button>
+      <div class="cart-item-details">
+        <div class="cart-item-name">${i.name}</div>
+        <div class="cart-item-price">${fmt(i.price * i.qty)} DA <span style="color:var(--text-muted);font-size:12px;font-weight:400;">(${fmt(i.price)}/u)</span></div>
+        <div class="cart-item-qty">
+          <button type="button" onclick="changeItemQty('${safeName}', -1)">−</button>
+          <span>${i.qty}</span>
+          <button type="button" onclick="changeItemQty('${safeName}', 1)"${i.qty >= (i.nbDispo || 999) ? ' disabled' : ''}>+</button>
         </div>
-        <div class="ci-price">${fmt(i.price * i.qty)} <small>DA</small></div>
       </div>
-      <button class="remove-btn" title="Supprimer" onclick="removeItem('${safeName}')">✕</button>
+      <button class="cart-item-remove" title="Supprimer" onclick="removeItem('${safeName}')">✕</button>
     </div>`;
   }).join('');
 }

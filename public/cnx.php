@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 
-<div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;">
+<div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;margin-top: 20px">
     <a href="catalogue.php" class="back-link">← Retour au catalogue</a>
 
 

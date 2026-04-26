@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 
-<div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;top-">
+<div style="padding:20px;width:100%;display:flex;flex-direction:column;align-items:center;margin-top: 30px">
     <a href="index.php" class="back-link">← Retour au catalogue</a>
 
     <div class="auth-page-card">
