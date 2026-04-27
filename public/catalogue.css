@@ -1,7 +1,3 @@
-/* ══════════════════════════════════════════════
-   CATALOGUE.CSS — BibenQuinc
-   ══════════════════════════════════════════════ */
-
 body {
   display: flex;
   flex-direction: column;
@@ -578,7 +574,6 @@ body.elec .product-card .unavailable-msg {
 
 /* FOOTER */
 .site-footer {
-  margin-top: auto;
   padding: 0px 32px;
   border-top: 1px solid var(--border);
   background: var(--bg);
