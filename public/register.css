@@ -141,3 +141,60 @@ body .site-footer a:hover {
     padding: 20px 16px;
   }
 }
+
+/* ── Shared auth helpers ── */
+.auth-page-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 60px;
+  min-height: 100vh;
+}
+
+.auth-page-card .auth-form {
+  padding: 28px 32px 20px;
+}
+
+.auth-inline-error {
+  margin: 12px 32px 0;
+  padding: 10px 14px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  border: 1px solid #fca5a5;
+}
+
+.auth-inline-success {
+  margin: 12px 32px 0;
+  padding: 10px 14px;
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  border: 1px solid #86efac;
+}
+
+.req { color: var(--accent); }
+
+/* Password toggle */
+.pwd-group { position: relative; }
+.pwd-wrap { position: relative; }
+.pwd-wrap input { padding-right: 42px; }
+.pwd-toggle {
+  position: absolute;
+  top: 50%; right: 10px;
+  transform: translateY(-50%);
+  background: none; border: none;
+  cursor: pointer; opacity: .5;
+  color: var(--text-muted);
+  display: flex; padding: 4px;
+  transition: opacity .2s;
+}
+.pwd-toggle svg { width: 18px; height: 18px; }
+.pwd-toggle:hover { opacity: 1; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

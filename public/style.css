@@ -1072,3 +1072,40 @@ body.elec .logo-bolt {
     font-size: 36px;
   }
 }
+
+/* ══ Account pages shared helpers ══ */
+
+/* Logo used as <a> — strip link decoration */
+a.logo {
+  text-decoration: none;
+  color: #fff;
+}
+
+/* Active nav link highlight */
+.nav a.nav-active {
+  color: var(--accent) !important;
+  background: var(--accent-glow);
+}
+
+/* App shell: allow pages taller than viewport to scroll freely */
+.app.scroll-page {
+  height: auto;
+  min-height: 100dvh;
+}
+
+/* count-chip in nav (shared) */
+.nav .count-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #fff;
+  color: var(--accent);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 4px;
+  font-family: var(--fd);
+}

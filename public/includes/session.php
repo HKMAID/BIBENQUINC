@@ -33,10 +33,12 @@ function currentUser(): ?array
 function loginUser(array $user): void
 {
     $_SESSION['user'] = [
-        'id' => $user['id'],
+        'id'        => $user['id'],
         'firstname' => $user['firstname'],
-        'lastname' => $user['lastname'],
-        'email' => $user['email'],
+        'lastname'  => $user['lastname'],
+        'email'     => $user['email'],
+        'phone'     => $user['phone']    ?? '',
+        'type'      => $user['type']     ?? 'client',
     ];
 }
 
