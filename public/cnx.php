@@ -25,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($result['ok']) {
             loginUser($result['user']);
-            setFlash('success', 'Connexion réussie. Bienvenue !');
 
             $dest = ($result['user']['type'] ?? 'client') === 'professionnel'
                     ? 'dashboard.php'
@@ -67,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <?php if ($flash && $flash['type'] === 'success'): ?>
-            <p class="auth-inline-success"><?= htmlspecialchars($flash['message'], ENT_QUOTES) ?></p>
+            <p class="auth-inline-success" id="flash-msg"><?= htmlspecialchars($flash['message'], ENT_QUOTES) ?></p>
         <?php endif; ?>
 
         <?php if ($error !== ''): ?>
@@ -120,6 +119,17 @@ function togglePwd(id, btn) {
     inp.type = show ? 'text' : 'password';
     btn.style.opacity = show ? '1' : '0.5';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const flash = document.getElementById('flash-msg');
+    if (flash) {
+        setTimeout(() => {
+            flash.style.transition = 'opacity 0.4s ease';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 400);
+        }, 2000);
+    }
+});
 </script>
 </body>
 </html>

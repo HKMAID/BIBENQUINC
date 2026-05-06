@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : mar. 05 mai 2026 à 21:38
+-- Généré le : mer. 06 mai 2026 à 14:57
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -70,7 +70,38 @@ CREATE TABLE `article_achat` (
 
 CREATE TABLE `categorie` (
   `idCat` int(11) NOT NULL,
-  `intituleCat` varchar(40) NOT NULL
+  `intituleCat` enum('outillage','visserie&boulonnerie','plomberie','peinture','jardinage','serrurerie','ampoules&eclairage','cables&fils','disjoncteurs','prises&interrupteurs','projecteurs','comptage') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `categorie`
+--
+
+INSERT INTO `categorie` (`idCat`, `intituleCat`) VALUES
+(1, 'outillage'),
+(2, 'visserie&boulonnerie'),
+(3, 'plomberie'),
+(4, 'peinture'),
+(5, 'jardinage'),
+(6, 'serrurerie'),
+(7, 'ampoules&eclairage'),
+(8, 'cables&fils'),
+(9, 'disjoncteurs'),
+(10, 'prises&interrupteurs'),
+(11, 'projecteurs'),
+(12, 'comptage');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `facture`
+--
+
+CREATE TABLE `facture` (
+  `idFac` int(11) NOT NULL,
+  `idAchat` int(11) NOT NULL,
+  `etat` enum('payée','non payée') NOT NULL,
+  `dateFac` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -100,6 +131,18 @@ CREATE TABLE `message` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `promo`
+--
+
+CREATE TABLE `promo` (
+  `idArt` int(11) NOT NULL,
+  `oldPrice` int(11) NOT NULL,
+  `newPrice` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `utilisateur`
 --
 
@@ -114,6 +157,14 @@ CREATE TABLE `utilisateur` (
   `created_at` datetime NOT NULL,
   `last_login` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `utilisateur`
+--
+
+INSERT INTO `utilisateur` (`idUtili`, `nom`, `prenom`, `email`, `numTel`, `mdp`, `type`, `created_at`, `last_login`) VALUES
+(1, 'Boutal', 'Asma', 'asmabl@gmail.com', '0645678906', '$2y$12$ARVxE3bRokak4FgXReKPBuLoYb7pGo0SIG0hf/uBGpx5Ce2m6/ueS', 'client', '2026-05-05 21:02:15', '2026-05-06 13:56:26'),
+(3, 'Brouk', 'Sami', 'samibrouk2@gmail.com', '0783245671', '$2y$12$zvu0mvNR3kHWpa6cIAAY2.CIfkGkJnOyCqxP9YgKieR52Hnpj/zum', 'professionnel', '2026-05-05 21:26:36', '2026-05-05 21:27:36');
 
 --
 -- Index pour les tables déchargées
@@ -147,6 +198,13 @@ ALTER TABLE `categorie`
   ADD PRIMARY KEY (`idCat`);
 
 --
+-- Index pour la table `facture`
+--
+ALTER TABLE `facture`
+  ADD PRIMARY KEY (`idFac`),
+  ADD KEY `fk_fact` (`idAchat`);
+
+--
 -- Index pour la table `favori`
 --
 ALTER TABLE `favori`
@@ -158,6 +216,12 @@ ALTER TABLE `favori`
 --
 ALTER TABLE `message`
   ADD KEY `fk_client_msg` (`idClient`);
+
+--
+-- Index pour la table `promo`
+--
+ALTER TABLE `promo`
+  ADD KEY `fk_promo` (`idArt`);
 
 --
 -- Index pour la table `utilisateur`
@@ -186,13 +250,13 @@ ALTER TABLE `article`
 -- AUTO_INCREMENT pour la table `categorie`
 --
 ALTER TABLE `categorie`
-  MODIFY `idCat` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `idCat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT pour la table `utilisateur`
 --
 ALTER TABLE `utilisateur`
-  MODIFY `idUtili` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `idUtili` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Contraintes pour les tables déchargées
@@ -220,6 +284,12 @@ ALTER TABLE `article_achat`
   ADD CONSTRAINT `fk_aa2` FOREIGN KEY (`idAchat`) REFERENCES `achat` (`idAchat`);
 
 --
+-- Contraintes pour la table `facture`
+--
+ALTER TABLE `facture`
+  ADD CONSTRAINT `fk_fact` FOREIGN KEY (`idAchat`) REFERENCES `achat` (`idAchat`);
+
+--
 -- Contraintes pour la table `favori`
 --
 ALTER TABLE `favori`
@@ -231,6 +301,12 @@ ALTER TABLE `favori`
 --
 ALTER TABLE `message`
   ADD CONSTRAINT `fk_client_msg` FOREIGN KEY (`idClient`) REFERENCES `utilisateur` (`idUtili`);
+
+--
+-- Contraintes pour la table `promo`
+--
+ALTER TABLE `promo`
+  ADD CONSTRAINT `fk_promo` FOREIGN KEY (`idArt`) REFERENCES `article` (`idArt`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

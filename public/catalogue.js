@@ -3,7 +3,7 @@ function toggleUserMenu(e) {
   const btn = document.getElementById('userMenuBtn');
   const dropdown = document.getElementById('userDropdown');
   const isOpen = dropdown.classList.contains('open');
-  
+
   if (isOpen) {
     dropdown.classList.remove('open');
     btn.classList.remove('active');
@@ -14,7 +14,7 @@ function toggleUserMenu(e) {
 }
 
 // Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   const userMenu = document.querySelector('.user-menu');
   if (userMenu && !userMenu.contains(e.target)) {
     const dropdown = document.getElementById('userDropdown');
@@ -43,7 +43,7 @@ function onRadioChange(cat) {
   const category = cat === 'elec' ? 'electricite' : 'quincaillerie';
   const url = new URL(window.location);
   url.searchParams.set('category', category);
-  url.searchParams.delete('sub_cat'); // Reset sub_cat when switching categories
+  url.searchParams.delete('cat'); // Reset cat when switching categories
   url.searchParams.delete('page'); // Reset page
   window.location.href = url.toString();
 }
@@ -59,7 +59,7 @@ function toggleSortMenu(btn) {
 }
 
 // Close sort menu when clicking outside
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   if (!e.target.closest('.search-box')) {
     document.querySelectorAll('.sort-btn').forEach(btn => {
       btn.classList.remove('active');
@@ -100,7 +100,7 @@ function updateProductCount() {
 
 // Wishlist button toggle
 document.querySelectorAll('.wishlist-btn').forEach(btn => {
-  btn.addEventListener('click', function(e) {
+  btn.addEventListener('click', function (e) {
     e.preventDefault();
     this.classList.toggle('active');
   });

@@ -140,7 +140,7 @@ if ($product !== null) {
             $priceRaw = (float) $product['price'];
             $oldPrice = isset($product['old_price']) ? number_format((float) $product['old_price'], 0, ',', ' ') : null;
             $stock = (int) ($product['nbDispo'] ?? 0);
-            $categoryLabel = ucfirst((string) ($product['sub_cat'] ?? 'general'));
+            $categoryLabel = ucfirst((string) ($product['cat'] ?? 'general'));
         ?>
         <section class="article-card">
             <div class="article-image">
