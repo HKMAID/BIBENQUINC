@@ -591,21 +591,26 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                     <div class="section-header"><h2>Clients inscrits</h2></div>
                     <div class="table-responsive">
                         <table class="data-table">
-                            <thead><tr><th>#</th><th>Nom</th><th>Email</th><th>Tél.</th><th>Type</th><th>Inscrit le</th></tr></thead>
+                            <thead><tr><th>#</th><th>Nom complet</th><th>Email</th><th>Téléphone</th><th>Inscrit le</th><th>Dernière connexion</th></tr></thead>
                             <tbody>
                             <?php
                             try {
-                                $stmtU = $pdo->query("SELECT idUtili, nom, prenom, email, numTel, type, created_at FROM utilisateur ORDER BY created_at DESC");
-                                foreach ($stmtU->fetchAll() as $u): ?>
-                                <tr>
-                                    <td><strong>#<?= $u['idUtili'] ?></strong></td>
-                                    <td><?= htmlspecialchars($u['prenom'] . ' ' . $u['nom']) ?></td>
-                                    <td><?= htmlspecialchars($u['email']) ?></td>
-                                    <td><?= htmlspecialchars($u['numTel']) ?></td>
-                                    <td><span class="badge <?= $u['type'] === 'professionnel' ? 'warning' : 'success' ?>"><?= htmlspecialchars($u['type']) ?></span></td>
-                                    <td><?= date('d/m/Y', strtotime($u['created_at'])) ?></td>
-                                </tr>
-                                <?php endforeach;
+                                $stmtU = $pdo->query("SELECT idUtili, nom, prenom, email, numTel, created_at, last_login FROM utilisateur WHERE type = 'client' ORDER BY created_at DESC");
+                                $clientRows = $stmtU->fetchAll();
+                                if (empty($clientRows)) {
+                                    echo '<tr><td colspan="6" class="text-center">Aucun client inscrit</td></tr>';
+                                } else {
+                                    foreach ($clientRows as $u): ?>
+                                    <tr>
+                                        <td><strong>#<?= $u['idUtili'] ?></strong></td>
+                                        <td><?= htmlspecialchars($u['prenom'] . ' ' . $u['nom']) ?></td>
+                                        <td><?= htmlspecialchars($u['email']) ?></td>
+                                        <td><?= htmlspecialchars($u['numTel']) ?></td>
+                                        <td><?= date('d/m/Y', strtotime($u['created_at'])) ?></td>
+                                        <td><?= $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : '<span style="color:var(--text-muted)">Jamais</span>' ?></td>
+                                    </tr>
+                                    <?php endforeach;
+                                }
                             } catch(Exception $e) { echo '<tr><td colspan="6" class="text-center">Erreur de chargement</td></tr>'; } ?>
                             </tbody>
                         </table>
@@ -614,36 +619,66 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
             </div>
 
             <div id="section-achats" style="display:none">
-                <div class="dashboard-header"><h1>Gestion des achats</h1><p>Suivi des commandes et génération de factures</p></div>
+                <div class="dashboard-header"><h1>Gestion des achats</h1><p>Suivi des commandes et consultation des factures</p></div>
                 <section class="dashboard-section">
                     <div class="section-header"><h2>Commandes récentes</h2></div>
                     <div class="table-responsive">
                         <table class="data-table">
-                            <thead><tr><th>#Achat</th><th>Client</th><th>Total</th><th>Date</th><th>Facture</th><th>Action</th></tr></thead>
+                            <thead><tr><th>#Achat</th><th>Client</th><th>Articles</th><th>Total</th><th>Date</th><th>Facture</th><th>Action</th></tr></thead>
                             <tbody>
                             <?php
                             try {
-                                $stmtA = $pdo->query("SELECT a.idAchat, a.total, a.dateAchat, u.nom, u.prenom, f.idFac, f.etat FROM achat a JOIN utilisateur u ON a.idClient = u.idUtili LEFT JOIN facture f ON f.idAchat = a.idAchat ORDER BY a.dateAchat DESC LIMIT 20");
-                                foreach ($stmtA->fetchAll() as $achat): ?>
+                                $stmtA = $pdo->query("
+                                    SELECT a.idAchat, a.total, a.dateAchat,
+                                           u.nom, u.prenom, u.email,
+                                           f.idFac, f.etat, f.dateFac,
+                                           COUNT(aa.idArticle) as nb_articles
+                                    FROM achat a
+                                    JOIN utilisateur u ON a.idClient = u.idUtili
+                                    LEFT JOIN facture f ON f.idAchat = a.idAchat
+                                    LEFT JOIN article_achat aa ON aa.idAchat = a.idAchat
+                                    GROUP BY a.idAchat, a.total, a.dateAchat, u.nom, u.prenom, u.email, f.idFac, f.etat, f.dateFac
+                                    ORDER BY a.dateAchat DESC LIMIT 30");
+                                $achats = $stmtA->fetchAll();
+                                if (empty($achats)) {
+                                    echo '<tr><td colspan="7" class="text-center">Aucune commande</td></tr>';
+                                } else {
+                                    foreach ($achats as $achat): ?>
                                 <tr>
-                                    <td><strong>#<?= $achat['idAchat'] ?></strong></td>
-                                    <td><?= htmlspecialchars($achat['prenom'] . ' ' . $achat['nom']) ?></td>
-                                    <td><?= number_format($achat['total'], 0, ',', ' ') ?> DA</td>
-                                    <td><?= date('d/m/Y H:i', strtotime($achat['dateAchat'])) ?></td>
-                                    <td><?php if ($achat['idFac']): ?><span class="badge <?= $achat['etat'] === 'payée' ? 'success' : 'warning' ?>"><?= htmlspecialchars($achat['etat']) ?></span><?php else: ?><span class="badge alert">Non générée</span><?php endif; ?></td>
+                                    <td><strong>BQ-<?= date('Y', strtotime($achat['dateAchat'])) ?>-<?= str_pad((string)$achat['idAchat'], 4, '0', STR_PAD_LEFT) ?></strong></td>
                                     <td>
+                                        <div style="font-weight:600"><?= htmlspecialchars($achat['prenom'] . ' ' . $achat['nom']) ?></div>
+                                        <div style="font-size:12px;color:var(--text-muted)"><?= htmlspecialchars($achat['email']) ?></div>
+                                    </td>
+                                    <td><?= $achat['nb_articles'] ?> réf.</td>
+                                    <td><strong><?= number_format($achat['total'], 0, ',', ' ') ?> DA</strong></td>
+                                    <td><?= date('d/m/Y H:i', strtotime($achat['dateAchat'])) ?></td>
+                                    <td><?php if ($achat['idFac']): ?>
+                                        <span class="badge <?= $achat['etat'] === 'payée' ? 'success' : 'warning' ?>"><?= $achat['etat'] === 'payée' ? 'Payée' : 'Non payée' ?></span>
+                                    <?php else: ?>
+                                        <span class="badge alert">Non générée</span>
+                                    <?php endif; ?></td>
+                                    <td style="display:flex;gap:6px;flex-wrap:wrap">
                                         <?php if (!$achat['idFac']): ?>
-                                        <form method="post" action="" style="display:inline">
+                                        <form method="post" style="display:inline">
                                             <input type="hidden" name="generate_facture" value="<?= $achat['idAchat'] ?>">
-                                            <button type="submit" class="btn-small">Générer facture</button>
+                                            <button type="submit" class="btn-small">Générer</button>
                                         </form>
                                         <?php else: ?>
-                                        <button class="btn-small" onclick="viewInvoice(<?= $achat['idFac'] ?>)">Voir</button>
+                                        <button class="btn-small" onclick="openFacture(<?= $achat['idFac'] ?>, <?= $achat['idAchat'] ?>, '<?= addslashes($achat['prenom'] . ' ' . $achat['nom']) ?>', '<?= number_format($achat['total'], 0, ',', ' ') ?>', '<?= date('d/m/Y H:i', strtotime($achat['dateAchat'])) ?>', '<?= addslashes($achat['etat']) ?>')">
+                                            Consulter
+                                        </button>
+                                        <?php if ($achat['etat'] === 'non payée'): ?>
+                                        <form method="post" style="display:inline">
+                                            <input type="hidden" name="mark_paid" value="<?= $achat['idFac'] ?>">
+                                            <button type="submit" class="btn-small" style="background:#10b981">Marquer payée</button>
+                                        </form>
+                                        <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
-                                <?php endforeach;
-                            } catch(Exception $e) { echo '<tr><td colspan="6" class="text-center">Erreur de chargement</td></tr>'; } ?>
+                                <?php endforeach; }
+                            } catch(Exception $e) { echo '<tr><td colspan="7" class="text-center">Erreur : ' . htmlspecialchars($e->getMessage()) . '</td></tr>'; } ?>
                             </tbody>
                         </table>
                     </div>
