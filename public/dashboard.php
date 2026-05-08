@@ -183,9 +183,11 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
 
             <nav class="nav">
                 <a href="catalogue.php">Catalogue</a>
+                <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
                 <a href="contact.php">Contact</a>
+                <?php endif; ?>
                 <div class="user-menu">
-                    <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
+                    <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" style="background-color: var(--bg, #f8fafc); border-radius: 8px;">
                         <?= htmlspecialchars((string) $authName, ENT_QUOTES) ?>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
@@ -198,9 +200,11 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                         <a href="logout.php">Déconnexion</a>
                     </div>
                 </div>
+                <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
                 <a href="#" class="cart-btn" onclick="return false;">
                     Mon panier
                 </a>
+                <?php endif; ?>
             </nav>
         </header>
 
