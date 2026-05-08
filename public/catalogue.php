@@ -12,14 +12,14 @@ $all_products = catalogueProducts();
 $wishlist = $_SESSION['wishlist'] ?? [];
 $search  = isset($_GET['search'])   ? trim($_GET['search'])   : '';
 $cat_key = isset($_GET['category']) ? trim($_GET['category']) : 'quincaillerie';
-$cat = isset($_GET['cat'])  ? trim($_GET['cat'])  : '';
+$subcat = isset($_GET['cat'])  ? trim($_GET['cat'])  : '';
 $page    = isset($_GET['page'])     ? max(1, (int)$_GET['page']) : 1;
 $sort    = isset($_GET['sort'])     ? trim($_GET['sort'])     : '';
 
-function getProducts($all, $cat, $search, $cat = '') {
+function getProducts($all, $cat_key, $search, $subcat = '') {
     return array_values(array_filter($all, fn($p) =>
-        $p['cat_key'] === $cat &&
-        ($cat === '' || ($p['cat'] ?? '') === $cat) &&
+        $p['cat_key'] === $cat_key &&
+        ($subcat === '' || ($p['sub_cat'] ?? '') === $subcat) &&
         ($search === '' || stripos($p['name'], $search) !== false)
     ));
 }
@@ -45,8 +45,8 @@ function sortProducts($products, $sort) {
     return $products;
 }
 
-$quinc_products = getProducts($all_products, 'quincaillerie', $search, $cat);
-$elec_products  = getProducts($all_products, 'electricite',   $search, $cat);
+$quinc_products = getProducts($all_products, 'quincaillerie', $search, $subcat);
+$elec_products  = getProducts($all_products, 'electricite',   $search, $subcat);
 $quinc_products = sortProducts($quinc_products, $sort);
 $elec_products = sortProducts($elec_products, $sort);
 $is_elec        = $cat_key === 'electricite';
@@ -62,7 +62,7 @@ $paginated_products = array_slice($current_products, $offset, $items_per_page);
 
 // Helper to render a product card
 function productCard($p) {
-    global $wishlist;
+    global $wishlist, $authUser;
     $name  = htmlspecialchars($p['name'], ENT_QUOTES);
     $price = $p['price'];
     $image  = htmlspecialchars($p['image'], ENT_QUOTES);
@@ -112,6 +112,15 @@ function productCard($p) {
         </div>
     </div>";
     }
+    $cartBtn = '';
+    if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel') {
+        $cartBtn = "<button class=\"add-btn\"
+                    data-name=\"{$name}\"
+                    data-price=\"{$price}\"
+                    data-image=\"{$image}\"
+                    data-nbdispo=\"{$nbDispo}\"
+                    onclick=\"addToCart(this)\">+ Panier</button>";
+    }
     
     return "
     <div class=\"product-card\" data-category=\"{$cat_key}\">
@@ -123,12 +132,7 @@ function productCard($p) {
             {$priceHtml}
         </div>
         <div class=\"actions\">
-            <button class=\"add-btn\"
-                    data-name=\"{$name}\"
-                    data-price=\"{$price}\"
-                    data-image=\"{$image}\"
-                    data-nbdispo=\"{$nbDispo}\"
-                    onclick=\"addToCart(this)\">+ Panier</button>
+            {$cartBtn}
             <a href=\"{$wishlistUrl}\" class=\"{$wishlistClass}\" title=\"{$wishlistTitle}\">
                 <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
                     <path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"></path>
@@ -181,7 +185,9 @@ function productCard($p) {
     </div>
 
     <nav class="nav">
+      <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="contact.php">Contact</a>
+      <?php endif; ?>
       <?php if ($authUser): ?>
         <div class="user-menu">
           <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
@@ -200,6 +206,7 @@ function productCard($p) {
       <?php else: ?>
         <a href="cnx.php">Connexion</a>
       <?php endif; ?>
+      <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="#" class="cart-btn" onclick="openDrawer(); return false;">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="9" cy="21" r="1"></circle>
@@ -207,6 +214,7 @@ function productCard($p) {
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
         </svg>
       </a>
+      <?php endif; ?>
     </nav>
   </header>
 
@@ -219,13 +227,13 @@ function productCard($p) {
         <div class="sidebar">
           <h2>Catégories</h2>
           <ul>
-            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>" class="<?= $cat === '' ? 'active' : '' ?>">Tous les produits</a></li>
-            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=outillage" class="<?= $cat === 'outillage' ? 'active' : '' ?>">Outillage</a></li>
-            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=visserie" class="<?= $cat === 'visserie' ? 'active' : '' ?>">Visserie &amp; Boulonnerie</a></li>
-            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=plomberie" class="<?= $cat === 'plomberie' ? 'active' : '' ?>">Plomberie</a></li>
-            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=peinture" class="<?= $cat === 'peinture' ? 'active' : '' ?>">Peinture</a></li>
-            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=jardinage" class="<?= $cat === 'jardinage' ? 'active' : '' ?>">Jardinage</a></li>
-            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=serrurerie" class="<?= $cat === 'serrurerie' ? 'active' : '' ?>">Serrurerie</a></li>
+            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>" class="<?= $subcat === '' ? 'active' : '' ?>">Tous les produits</a></li>
+            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=outillage" class="<?= $subcat === 'outillage' ? 'active' : '' ?>">Outillage</a></li>
+            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=visserie" class="<?= $subcat === 'visserie' ? 'active' : '' ?>">Visserie &amp; Boulonnerie</a></li>
+            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=plomberie" class="<?= $subcat === 'plomberie' ? 'active' : '' ?>">Plomberie</a></li>
+            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=peinture" class="<?= $subcat === 'peinture' ? 'active' : '' ?>">Peinture</a></li>
+            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=jardinage" class="<?= $subcat === 'jardinage' ? 'active' : '' ?>">Jardinage</a></li>
+            <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=serrurerie" class="<?= $subcat === 'serrurerie' ? 'active' : '' ?>">Serrurerie</a></li>
           </ul>
         </div>
         <div class="main-content">
@@ -235,7 +243,7 @@ function productCard($p) {
               <input type="search" name="search" placeholder="Rechercher…"
                     value="<?= htmlspecialchars($search) ?>">
               <input type="hidden" name="category" value="quincaillerie">
-              <input type="hidden" name="cat" value="<?= htmlspecialchars($cat) ?>">
+              <input type="hidden" name="cat" value="<?= htmlspecialchars($subcat) ?>">
               <button type="button" class="sort-btn" onclick="toggleSortMenu(this)" title="Trier">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="4" y1="6" x2="20" y2="6"></line>
@@ -244,11 +252,11 @@ function productCard($p) {
                 </svg>
               </button>
               <div class="sort-menu">
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=name_asc" class="<?= ($_GET['sort'] ?? '') === 'name_asc' ? 'active' : '' ?>">Nom (A-Z)</a>
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=name_desc" class="<?= ($_GET['sort'] ?? '') === 'name_desc' ? 'active' : '' ?>">Nom (Z-A)</a>
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=price_asc" class="<?= ($_GET['sort'] ?? '') === 'price_asc' ? 'active' : '' ?>">Prix (croissant)</a>
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=price_desc" class="<?= ($_GET['sort'] ?? '') === 'price_desc' ? 'active' : '' ?>">Prix (décroissant)</a>
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=note_desc" class="<?= ($_GET['sort'] ?? '') === 'note_desc' ? 'active' : '' ?>">Mieux notés</a>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=name_asc" class="<?= ($_GET['sort'] ?? '') === 'name_asc' ? 'active' : '' ?>">Nom (A-Z)</a>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=name_desc" class="<?= ($_GET['sort'] ?? '') === 'name_desc' ? 'active' : '' ?>">Nom (Z-A)</a>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=price_asc" class="<?= ($_GET['sort'] ?? '') === 'price_asc' ? 'active' : '' ?>">Prix (croissant)</a>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=price_desc" class="<?= ($_GET['sort'] ?? '') === 'price_desc' ? 'active' : '' ?>">Prix (décroissant)</a>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=note_desc" class="<?= ($_GET['sort'] ?? '') === 'note_desc' ? 'active' : '' ?>">Mieux notés</a>
               </div>
             </form>
           </div>
@@ -262,7 +270,7 @@ function productCard($p) {
           <?php if (!empty($quinc_products) && $total_pages > 1): ?>
           <div class="pagination">
             <?php if ($page > 1): ?>
-              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $page - 1 ?>">← Précédent</a>
+              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page - 1 ?>">← Précédent</a>
             <?php else: ?>
               <span class="disabled">← Précédent</span>
             <?php endif; ?>
@@ -271,7 +279,7 @@ function productCard($p) {
               $start = max(1, $page - 2);
               $end = min($total_pages, $page + 2);
               if ($start > 1): ?>
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=1">1</a>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=1">1</a>
               <?php endif;
               if ($start > 2): ?>
                 <span>...</span>
@@ -280,18 +288,18 @@ function productCard($p) {
                 <?php if ($i === $page): ?>
                   <span class="current"><?= $i ?></span>
                 <?php else: ?>
-                  <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $i ?>"><?= $i ?></a>
+                  <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $i ?>"><?= $i ?></a>
                 <?php endif; ?>
               <?php endfor;
               if ($end < $total_pages - 1): ?>
                 <span>...</span>
               <?php endif;
               if ($end < $total_pages): ?>
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $total_pages ?>"><?= $total_pages ?></a>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $total_pages ?>"><?= $total_pages ?></a>
               <?php endif; ?>
             
             <?php if ($page < $total_pages): ?>
-              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $page + 1 ?>">Suivant →</a>
+              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page + 1 ?>">Suivant →</a>
             <?php else: ?>
               <span class="disabled">Suivant →</span>
             <?php endif; ?>
@@ -310,13 +318,13 @@ function productCard($p) {
         <div class="sidebar">
           <h2>Catégories</h2>
           <ul>
-            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>" class="<?= $cat === '' ? 'active' : '' ?>">Tous les produits</a></li>
-            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=eclairage" class="<?= $cat === 'eclairage' ? 'active' : '' ?>">Ampoules &amp; Éclairage</a></li>
-            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=cables" class="<?= $cat === 'cables' ? 'active' : '' ?>">Câbles &amp; Fils</a></li>
-            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=disjoncteurs" class="<?= $cat === 'disjoncteurs' ? 'active' : '' ?>">Disjoncteurs</a></li>
-            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=prises" class="<?= $cat === 'prises' ? 'active' : '' ?>">Prises &amp; Interrupteurs</a></li>
-            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=projecteurs" class="<?= $cat === 'projecteurs' ? 'active' : '' ?>">Projecteurs</a></li>
-            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=comptage" class="<?= $cat === 'comptage' ? 'active' : '' ?>">Comptage</a></li>
+            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>" class="<?= $subcat === '' ? 'active' : '' ?>">Tous les produits</a></li>
+            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=eclairage" class="<?= $subcat === 'eclairage' ? 'active' : '' ?>">Ampoules &amp; Éclairage</a></li>
+            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=cables" class="<?= $subcat === 'cables' ? 'active' : '' ?>">Câbles &amp; Fils</a></li>
+            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=disjoncteurs" class="<?= $subcat === 'disjoncteurs' ? 'active' : '' ?>">Disjoncteurs</a></li>
+            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=prises" class="<?= $subcat === 'prises' ? 'active' : '' ?>">Prises &amp; Interrupteurs</a></li>
+            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=projecteurs" class="<?= $subcat === 'projecteurs' ? 'active' : '' ?>">Projecteurs</a></li>
+            <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=comptage" class="<?= $subcat === 'comptage' ? 'active' : '' ?>">Comptage</a></li>
           </ul>
         </div>
         <div class="main-content">
@@ -326,7 +334,7 @@ function productCard($p) {
               <input type="search" name="search" placeholder="Rechercher…"
                     value="<?= htmlspecialchars($search) ?>">
               <input type="hidden" name="category" value="electricite">
-              <input type="hidden" name="cat" value="<?= htmlspecialchars($cat) ?>">
+              <input type="hidden" name="cat" value="<?= htmlspecialchars($subcat) ?>">
               <button type="button" class="sort-btn" onclick="toggleSortMenu(this)" title="Trier">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="4" y1="6" x2="20" y2="6"></line>
@@ -335,11 +343,11 @@ function productCard($p) {
                 </svg>
               </button>
               <div class="sort-menu">
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=name_asc" class="<?= ($_GET['sort'] ?? '') === 'name_asc' ? 'active' : '' ?>">Nom (A-Z)</a>
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=name_desc" class="<?= ($_GET['sort'] ?? '') === 'name_desc' ? 'active' : '' ?>">Nom (Z-A)</a>
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=price_asc" class="<?= ($_GET['sort'] ?? '') === 'price_asc' ? 'active' : '' ?>">Prix (croissant)</a>
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=price_desc" class="<?= ($_GET['sort'] ?? '') === 'price_desc' ? 'active' : '' ?>">Prix (décroissant)</a>
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&sort=note_desc" class="<?= ($_GET['sort'] ?? '') === 'note_desc' ? 'active' : '' ?>">Mieux notés</a>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=name_asc" class="<?= ($_GET['sort'] ?? '') === 'name_asc' ? 'active' : '' ?>">Nom (A-Z)</a>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=name_desc" class="<?= ($_GET['sort'] ?? '') === 'name_desc' ? 'active' : '' ?>">Nom (Z-A)</a>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=price_asc" class="<?= ($_GET['sort'] ?? '') === 'price_asc' ? 'active' : '' ?>">Prix (croissant)</a>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=price_desc" class="<?= ($_GET['sort'] ?? '') === 'price_desc' ? 'active' : '' ?>">Prix (décroissant)</a>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&sort=note_desc" class="<?= ($_GET['sort'] ?? '') === 'note_desc' ? 'active' : '' ?>">Mieux notés</a>
               </div>
             </form>
           </div>
@@ -353,7 +361,7 @@ function productCard($p) {
           <?php if (!empty($elec_products) && $total_pages > 1): ?>
           <div class="pagination">
             <?php if ($page > 1): ?>
-              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $page - 1 ?>">← Précédent</a>
+              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page - 1 ?>">← Précédent</a>
             <?php else: ?>
               <span class="disabled">← Précédent</span>
             <?php endif; ?>
@@ -362,7 +370,7 @@ function productCard($p) {
               $start = max(1, $page - 2);
               $end = min($total_pages, $page + 2);
               if ($start > 1): ?>
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=1">1</a>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=1">1</a>
               <?php endif;
               if ($start > 2): ?>
                 <span>...</span>
@@ -371,18 +379,18 @@ function productCard($p) {
                 <?php if ($i === $page): ?>
                   <span class="current"><?= $i ?></span>
                 <?php else: ?>
-                  <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $i ?>"><?= $i ?></a>
+                  <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $i ?>"><?= $i ?></a>
                 <?php endif; ?>
               <?php endfor;
               if ($end < $total_pages - 1): ?>
                 <span>...</span>
               <?php endif;
               if ($end < $total_pages): ?>
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $total_pages ?>"><?= $total_pages ?></a>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $total_pages ?>"><?= $total_pages ?></a>
               <?php endif; ?>
             
             <?php if ($page < $total_pages): ?>
-              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($cat) ?>&page=<?= $page + 1 ?>">Suivant →</a>
+              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page + 1 ?>">Suivant →</a>
             <?php else: ?>
               <span class="disabled">Suivant →</span>
             <?php endif; ?>

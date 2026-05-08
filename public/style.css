@@ -260,12 +260,13 @@ body.elec .logo-bolt {
   position: absolute;
   top: 100%;
   right: 0;
-  background: var(--surface);
+  background-color: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   min-width: 180px;
   margin-top: 4px;
-  padding: 4px 0;
+  padding: 0;
+  overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
   opacity: 0;
   visibility: hidden;

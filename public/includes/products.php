@@ -13,12 +13,43 @@ function slugifyProductName(string $name): string
 
 function productPromotions(): array
 {
-    return [
+    $promos = [
         'Tournevis électrique' => 2900,
         'Échelle aluminium 3m' => 5100,
         'Disjoncteur différentiel' => 3600,
         'Projecteur LED 50W' => 3700,
     ];
+    
+    try {
+        require_once dirname(__DIR__, 2) . '/config/db.php';
+        $pdo = getPDO();
+        $stmt = $pdo->query('SELECT a.intitule, p.oldPrice FROM promo p JOIN article a ON p.idArt = a.idArt');
+        foreach ($stmt as $row) {
+            $promos[$row['intitule']] = (int)$row['oldPrice'];
+        }
+    } catch (Exception $e) {
+        // DB issue, fallback to hardcoded
+    }
+    
+    return $promos;
+}
+
+function productNotes(): array
+{
+    $notes = [];
+    try {
+        require_once dirname(__DIR__, 2) . '/config/db.php';
+        $pdo = getPDO();
+        $stmt = $pdo->query('SELECT a.intitule, AVG(n.note) AS avg_note FROM note n JOIN article a ON n.idArticle = a.idArt GROUP BY a.idArt');
+        foreach ($stmt as $row) {
+            if ($row['avg_note'] !== null) {
+                $notes[$row['intitule']] = round((float)$row['avg_note'], 1);
+            }
+        }
+    } catch (Exception $e) {
+        // DB issue, ignore
+    }
+    return $notes;
 }
 
 function productBrands(): array
@@ -96,6 +127,7 @@ function catalogueProducts(): array
 
     $promos = productPromotions();
     $brands = productBrands();
+    $dbNotes = productNotes();
 
     foreach ($products as &$product) {
         $slug = slugifyProductName((string) $product['name']);
@@ -106,6 +138,10 @@ function catalogueProducts(): array
 
         if (isset($promos[$product['name']])) {
             $product['old_price'] = (int) $promos[$product['name']];
+        }
+        
+        if (isset($dbNotes[$product['name']])) {
+            $product['note'] = $dbNotes[$product['name']];
         }
     }
     unset($product);

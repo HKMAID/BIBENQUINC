@@ -161,13 +161,14 @@
   top: calc(100% + 8px);
   right: 0;
   min-width: 180px;
-  background: #fff;
+  background-color: var(--bg);
   border-radius: var(--r-md);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   opacity: 0;
   visibility: hidden;
   transform: translateY(-8px);
   transition: all 0.25s var(--ease);
+  overflow: hidden;
 }
 
 .contact-app .user-dropdown.open {

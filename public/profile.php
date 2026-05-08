@@ -78,11 +78,6 @@ include __DIR__ . '/includes/header.php';
         <p class="acc-banner-sub">Gérez vos coordonnées et votre mot de passe</p>
       </div>
     </div>
-    <nav class="acc-tabs">
-      <a href="profile.php" class="acc-tab active">Informations</a>
-      <a href="achats.php"  class="acc-tab">Mes achats</a>
-      <a href="pref.php"    class="acc-tab">Favoris</a>
-    </nav>
   </div>
 
   <main class="acc-main">

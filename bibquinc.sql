@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : mer. 06 mai 2026 à 14:57
+-- Généré le : ven. 08 mai 2026 à 23:18
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -131,6 +131,18 @@ CREATE TABLE `message` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `note`
+--
+
+CREATE TABLE `note` (
+  `idClient` int(11) NOT NULL,
+  `idArticle` int(11) NOT NULL,
+  `note` decimal(3,1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `promo`
 --
 
@@ -163,8 +175,8 @@ CREATE TABLE `utilisateur` (
 --
 
 INSERT INTO `utilisateur` (`idUtili`, `nom`, `prenom`, `email`, `numTel`, `mdp`, `type`, `created_at`, `last_login`) VALUES
-(1, 'Boutal', 'Asma', 'asmabl@gmail.com', '0645678906', '$2y$12$ARVxE3bRokak4FgXReKPBuLoYb7pGo0SIG0hf/uBGpx5Ce2m6/ueS', 'client', '2026-05-05 21:02:15', '2026-05-06 13:56:26'),
-(3, 'Brouk', 'Sami', 'samibrouk2@gmail.com', '0783245671', '$2y$12$zvu0mvNR3kHWpa6cIAAY2.CIfkGkJnOyCqxP9YgKieR52Hnpj/zum', 'professionnel', '2026-05-05 21:26:36', '2026-05-05 21:27:36');
+(1, 'Boutal', 'Asma', 'asmabl@gmail.com', '0645678906', '$2y$12$ARVxE3bRokak4FgXReKPBuLoYb7pGo0SIG0hf/uBGpx5Ce2m6/ueS', 'client', '2026-05-05 21:02:15', '2026-05-06 14:21:56'),
+(3, 'Brouk', 'Sami', 'samibrouk2@gmail.com', '0783245671', '$2y$12$zvu0mvNR3kHWpa6cIAAY2.CIfkGkJnOyCqxP9YgKieR52Hnpj/zum', 'professionnel', '2026-05-05 21:26:36', '2026-05-08 12:45:56');
 
 --
 -- Index pour les tables déchargées
@@ -216,6 +228,14 @@ ALTER TABLE `favori`
 --
 ALTER TABLE `message`
   ADD KEY `fk_client_msg` (`idClient`);
+
+--
+-- Index pour la table `note`
+--
+ALTER TABLE `note`
+  ADD PRIMARY KEY (`idClient`,`idArticle`),
+  ADD KEY `fk_article_note` (`idArticle`),
+  ADD KEY `fk_client_note` (`idClient`) USING BTREE;
 
 --
 -- Index pour la table `promo`
@@ -301,6 +321,13 @@ ALTER TABLE `favori`
 --
 ALTER TABLE `message`
   ADD CONSTRAINT `fk_client_msg` FOREIGN KEY (`idClient`) REFERENCES `utilisateur` (`idUtili`);
+
+--
+-- Contraintes pour la table `note`
+--
+ALTER TABLE `note`
+  ADD CONSTRAINT `fk_article_note` FOREIGN KEY (`idArticle`) REFERENCES `article` (`idArt`),
+  ADD CONSTRAINT `fk_client_note` FOREIGN KEY (`idClient`) REFERENCES `utilisateur` (`idUtili`);
 
 --
 -- Contraintes pour la table `promo`

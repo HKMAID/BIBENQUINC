@@ -61,6 +61,7 @@ function sortWishlist(array $products, string $sort): array {
 $wishlist_products = sortWishlist($wishlist_products, $sort);
 
 function renderFavCard(array $p): string {
+    global $authUser;
     $name    = htmlspecialchars($p['name'], ENT_QUOTES);
     $image   = htmlspecialchars($p['image'], ENT_QUOTES);
     $price   = $p['price'];
@@ -70,14 +71,19 @@ function renderFavCard(array $p): string {
     $removeUrl = 'pref.php?remove=' . urlencode($p['name']);
     $stars   = str_repeat('★', (int)round($note/2)) . str_repeat('☆', 5-(int)round($note/2));
 
-    $actions = $nbDispo === 0
-        ? '<div class="unavailable-msg">Article Indisponible</div>'
-        : '<button class="add-btn"
+    $cartBtn = '';
+    if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel') {
+        $cartBtn = '<button class="add-btn"
                    data-name="'.$name.'"
                    data-price="'.$price.'"
                    data-image="'.$image.'"
                    data-nbdispo="'.$nbDispo.'"
                    onclick="addToCart(this)">+ Panier</button>';
+    }
+
+    $actions = $nbDispo === 0
+        ? '<div class="unavailable-msg">Article Indisponible</div>'
+        : $cartBtn;
 
     return <<<HTML
     <div class="product-card pref-card">
@@ -117,11 +123,6 @@ include __DIR__ . '/includes/header.php';
         </p>
       </div>
     </div>
-    <nav class="acc-tabs">
-      <a href="profile.php" class="acc-tab">Informations</a>
-      <a href="achats.php"  class="acc-tab">Mes achats</a>
-      <a href="pref.php"    class="acc-tab active">Favoris</a>
-    </nav>
   </div>
 
   <main class="acc-main">

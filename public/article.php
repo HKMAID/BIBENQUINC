@@ -73,7 +73,9 @@ if ($product !== null) {
     </div>
 
     <nav class="nav">
+      <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="contact.php">Contact</a>
+      <?php endif; ?>
       <?php if ($authUser): ?>
         <div class="user-menu">
           <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
@@ -91,6 +93,7 @@ if ($product !== null) {
       <?php else: ?>
         <a href="cnx.php">Connexion</a>
       <?php endif; ?>
+      <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="#" class="cart-btn" onclick="openDrawer(); return false;">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="9" cy="21" r="1"></circle>
@@ -98,6 +101,7 @@ if ($product !== null) {
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
         </svg>
       </a>
+      <?php endif; ?>
       <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
       <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
       <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
@@ -170,26 +174,28 @@ if ($product !== null) {
                 <p class="article-brand">Marque: <strong><?= $brand ?></strong></p>
 
                 <div class="article-cart">
-                    <?php if ($stock > 0): ?>
-                        <div class="actions">
-                            <div class="quantity">
-                                <button type="button" onclick="adjustArticleQty(-1)">−</button>
-                                <input id="articleQty" type="number" value="1" min="1" max="<?= $stock ?>" onblur="normalizeArticleQty(true)">
-                                <button type="button" onclick="adjustArticleQty(1)">+</button>
+                    <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
+                        <?php if ($stock > 0): ?>
+                            <div class="actions">
+                                <div class="quantity">
+                                    <button type="button" onclick="adjustArticleQty(-1)">−</button>
+                                    <input id="articleQty" type="number" value="1" min="1" max="<?= $stock ?>" onblur="normalizeArticleQty(true)">
+                                    <button type="button" onclick="adjustArticleQty(1)">+</button>
+                                </div>
+                                <button class="add-btn"
+                                        type="button"
+                                        data-name="<?= $name ?>"
+                                        data-price="<?= $priceRaw ?>"
+                                        data-image="<?= $image ?>"
+                                        data-nbdispo="<?= $stock ?>"
+                                        onclick="addToCart(this)">
+                                    Ajouter au panier
+                                </button>
                             </div>
-                            <button class="add-btn"
-                                    type="button"
-                                    data-name="<?= $name ?>"
-                                    data-price="<?= $priceRaw ?>"
-                                    data-image="<?= $image ?>"
-                                    data-nbdispo="<?= $stock ?>"
-                                    onclick="addToCart(this)">
-                                Ajouter au panier
-                            </button>
-                        </div>
-                        <small class="stock-help">Quantite max autorisee: <?= $stock ?></small>
-                    <?php else: ?>
-                        <p class="feedback error">Article indisponible actuellement.</p>
+                            <small class="stock-help">Quantite max autorisee: <?= $stock ?></small>
+                        <?php else: ?>
+                            <p class="feedback error">Article indisponible actuellement.</p>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
 

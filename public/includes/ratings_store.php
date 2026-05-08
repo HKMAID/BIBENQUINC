@@ -1,85 +1,70 @@
 <?php
 declare(strict_types=1);
 
-function ratingsDbPath(): string
-{
-    return dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ratings.sqlite';
-}
-
-function ratingsPdo(): PDO
-{
-    static $pdo = null;
-    if ($pdo instanceof PDO) {
-        return $pdo;
-    }
-
-    $dbPath = ratingsDbPath();
-    $dir = dirname($dbPath);
-    if (!is_dir($dir)) {
-        mkdir($dir, 0777, true);
-    }
-
-    $pdo = new PDO('sqlite:' . $dbPath);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-
-    $pdo->exec(
-        'CREATE TABLE IF NOT EXISTS product_ratings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT NOT NULL,
-            product_id TEXT NOT NULL,
-            rating REAL NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            UNIQUE(user_id, product_id)
-        )'
-    );
-
-    return $pdo;
-}
+require_once dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'db.php';
 
 function saveProductRating(string $userId, string $productId, float $rating): void
 {
-    $pdo = ratingsPdo();
-    $now = date('c');
-
-    $stmt = $pdo->prepare(
-        'INSERT INTO product_ratings (user_id, product_id, rating, created_at, updated_at)
-         VALUES (:user_id, :product_id, :rating, :created_at, :updated_at)
-         ON CONFLICT(user_id, product_id)
-         DO UPDATE SET rating = excluded.rating, updated_at = excluded.updated_at'
-    );
-    $stmt->execute([
-        ':user_id' => $userId,
-        ':product_id' => $productId,
-        ':rating' => $rating,
-        ':created_at' => $now,
-        ':updated_at' => $now,
-    ]);
+    $pdo = getPDO();
+    
+    require_once __DIR__ . '/products.php';
+    $product = findProductBySlug($productId);
+    if (!$product) return;
+    
+    $stmt = $pdo->prepare('SELECT idArt FROM article WHERE intitule = ? LIMIT 1');
+    $stmt->execute([$product['name']]);
+    $idArt = $stmt->fetchColumn();
+    
+    if ($idArt) {
+        $stmt = $pdo->prepare('
+            INSERT INTO note (idClient, idArticle, note) 
+            VALUES (:idClient, :idArticle, :note)
+            ON DUPLICATE KEY UPDATE note = VALUES(note)
+        ');
+        $stmt->execute([
+            ':idClient' => (int)$userId,
+            ':idArticle' => $idArt,
+            ':note' => $rating,
+        ]);
+    }
 }
 
 function getUserRating(string $userId, string $productId): ?float
 {
-    $stmt = ratingsPdo()->prepare(
-        'SELECT rating FROM product_ratings WHERE user_id = :user_id AND product_id = :product_id LIMIT 1'
-    );
-    $stmt->execute([
-        ':user_id' => $userId,
-        ':product_id' => $productId,
-    ]);
-
-    $row = $stmt->fetch();
-    return $row ? (float) $row['rating'] : null;
+    $pdo = getPDO();
+    
+    require_once __DIR__ . '/products.php';
+    $product = findProductBySlug($productId);
+    if (!$product) return null;
+    
+    $stmt = $pdo->prepare('
+        SELECT n.note 
+        FROM note n 
+        JOIN article a ON n.idArticle = a.idArt 
+        WHERE a.intitule = ? AND n.idClient = ?
+        LIMIT 1
+    ');
+    $stmt->execute([$product['name'], $userId]);
+    
+    $res = $stmt->fetchColumn();
+    return $res !== false ? (float)$res : null;
 }
 
 function getProductGlobalRating(string $productId): array
 {
-    $stmt = ratingsPdo()->prepare(
-        'SELECT AVG(rating) AS avg_rating, COUNT(*) AS total_votes
-         FROM product_ratings
-         WHERE product_id = :product_id'
-    );
-    $stmt->execute([':product_id' => $productId]);
+    $pdo = getPDO();
+    
+    require_once __DIR__ . '/products.php';
+    $product = findProductBySlug($productId);
+    if (!$product) return ['average' => null, 'count' => 0];
+    
+    $stmt = $pdo->prepare('
+        SELECT AVG(n.note) AS avg_rating, COUNT(*) AS total_votes
+        FROM note n 
+        JOIN article a ON n.idArticle = a.idArt 
+        WHERE a.intitule = ?
+    ');
+    $stmt->execute([$product['name']]);
     $row = $stmt->fetch();
 
     $avg = isset($row['avg_rating']) && $row['avg_rating'] !== null ? (float) $row['avg_rating'] : null;
@@ -90,3 +75,4 @@ function getProductGlobalRating(string $productId): array
         'count' => $count,
     ];
 }
+

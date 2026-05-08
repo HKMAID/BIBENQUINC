@@ -45,7 +45,9 @@ $activeNav = $activeNav ?? '';
 
     <nav class="nav">
       <a href="catalogue.php" class="<?= $activeNav === 'catalogue' ? 'nav-active' : '' ?>">Catalogue</a>
+      <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="contact.php"   class="<?= $activeNav === 'contact'   ? 'nav-active' : '' ?>">Contact</a>
+      <?php endif; ?>
 
       <?php if ($authUser ?? null): ?>
         <div class="user-menu">
@@ -66,6 +68,7 @@ $activeNav = $activeNav ?? '';
         <a href="cnx.php">Connexion</a>
       <?php endif; ?>
 
+      <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="#" class="cart-btn" id="cartBtn" onclick="openDrawer(); return false;">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="9" cy="21" r="1"></circle>
@@ -74,5 +77,6 @@ $activeNav = $activeNav ?? '';
         </svg>
         <span class="count-chip" id="chipCount">0</span>
       </a>
+      <?php endif; ?>
     </nav>
   </header>

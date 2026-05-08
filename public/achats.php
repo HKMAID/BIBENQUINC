@@ -82,11 +82,6 @@ include __DIR__ . '/includes/header.php';
         <p class="acc-banner-sub"><?= count($orders) ?> commande<?= count($orders) !== 1 ? 's' : '' ?></p>
       </div>
     </div>
-    <nav class="acc-tabs">
-      <a href="profile.php" class="acc-tab">Informations</a>
-      <a href="achats.php"  class="acc-tab active">Mes achats</a>
-      <a href="pref.php"    class="acc-tab">Favoris</a>
-    </nav>
   </div>
 
   <main class="acc-main">
