@@ -78,7 +78,7 @@ if ($product !== null) {
       <?php endif; ?>
       <?php if ($authUser): ?>
         <div class="user-menu">
-          <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
+          <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" style="background-color: <?= $isElec ? 'rgba(11, 105, 248, 0.2)' : 'rgba(232, 93, 4, 0.2)' ?>;">
             <?= htmlspecialchars((string) $authName, ENT_QUOTES) ?>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
@@ -86,7 +86,12 @@ if ($product !== null) {
           </button>
           <div class="user-dropdown" id="userDropdown">
             <a href="profile.php">Mon profil</a>
+            <?php if (($authUser['type'] ?? null) === 'professionnel'): ?>
+            <a href="dashboard.php">Tableau de bord</a>
+            <?php else: ?>
+            <a href="achats.php">Mes achats</a>
             <a href="pref.php">Mes préférences</a>
+            <?php endif; ?>
             <a href="logout.php">Déconnexion</a>
           </div>
         </div>
@@ -102,27 +107,6 @@ if ($product !== null) {
         </svg>
       </a>
       <?php endif; ?>
-      <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-      <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-      <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-      <!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
-      <html>
-        <head>
-            <meta charset="utf-8">
-            <meta http-equiv="X-UA-Compatible" content="IE=edge">
-            <title><</title>
-            <meta name="description" content="">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <link rel="stylesheet" href="">
-        </head>
-        <body>
-            <!--[if lt IE 7]>
-                <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
-            <![endif]-->
-            
-            <script src="" async defer></script>
-        </body>
-      </html></a>
     </nav>
   </header>
 
@@ -144,7 +128,7 @@ if ($product !== null) {
             $priceRaw = (float) $product['price'];
             $oldPrice = isset($product['old_price']) ? number_format((float) $product['old_price'], 0, ',', ' ') : null;
             $stock = (int) ($product['nbDispo'] ?? 0);
-            $categoryLabel = ucfirst((string) ($product['cat'] ?? 'general'));
+            $categoryLabel = ucfirst((string) ($product['sub_cat'] ?? $product['cat_key'] ?? 'general'));
         ?>
         <section class="article-card">
             <div class="article-image">
@@ -199,6 +183,7 @@ if ($product !== null) {
                     <?php endif; ?>
                 </div>
 
+                <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
                 <div class="rating-zone">
                     <h2>Noter cet article</h2>
                     <br>
@@ -228,6 +213,7 @@ if ($product !== null) {
                         <a class="login-link" href="cnx.php">Se connecter</a>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
         </section>
     <?php endif; ?>

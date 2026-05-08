@@ -58,7 +58,6 @@ body {
   transition: background var(--t), color var(--t);
 }
 
-/* ══ App shell ══ */
 .app {
   display: flex;
   flex-direction: column;
@@ -66,7 +65,6 @@ body {
   height: 100dvh;
 }
 
-/* ══ Header ══ */
 .site-header {
   background: var(--header-bg);
   padding: 0 28px;
@@ -218,7 +216,6 @@ body.elec .logo-bolt {
   background: rgba(255, 255, 255, .08);
 }
 
-/* User Dropdown */
 .user-menu {
   position: relative;
   display: flex;
@@ -229,7 +226,7 @@ body.elec .logo-bolt {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #999;
+  color: #c44d00;
   padding: 6px 14px;
   border: none;
   background: none;
@@ -352,8 +349,6 @@ body.elec .logo-bolt {
 .cart-count.ping {
   transform: scale(1.5)
 }
-
-
 
 .auth-overlay {
   position: fixed;

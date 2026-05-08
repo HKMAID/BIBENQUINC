@@ -5,6 +5,7 @@
  * Param: $activeNav — optional string: 'catalogue', 'contact', 'profile', 'achats', 'pref'
  */
 $activeNav = $activeNav ?? '';
+$flash = $flash ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -59,8 +60,12 @@ $activeNav = $activeNav ?? '';
           </button>
           <div class="user-dropdown" id="userDropdown">
             <a href="profile.php" class="<?= $activeNav === 'profile' ? 'active' : '' ?>">Mon profil</a>
+            <?php if (($authUser['type'] ?? null) === 'professionnel'): ?>
+            <a href="dashboard.php" class="<?= $activeNav === 'dashboard' ? 'active' : '' ?>">Tableau de bord</a>
+            <?php else: ?>
             <a href="achats.php"  class="<?= $activeNav === 'achats'  ? 'active' : '' ?>">Mes achats</a>
             <a href="pref.php"    class="<?= $activeNav === 'pref'    ? 'active' : '' ?>">Mes préférences</a>
+            <?php endif; ?>
             <a href="logout.php" style="color:#ef4444">Déconnexion</a>
           </div>
         </div>

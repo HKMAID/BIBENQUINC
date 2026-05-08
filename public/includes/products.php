@@ -159,3 +159,16 @@ function findProductBySlug(string $slug): ?array
 
     return null;
 }
+function getProductIdByName(string $name): ?int
+{
+    try {
+        require_once dirname(__DIR__, 2) . '/config/db.php';
+        $pdo = getPDO();
+        $stmt = $pdo->prepare('SELECT idArt FROM article WHERE intitule = ? LIMIT 1');
+        $stmt->execute([$name]);
+        $row = $stmt->fetch();
+        return $row ? (int)$row['idArt'] : null;
+    } catch (Exception $e) {
+        return null;
+    }
+}

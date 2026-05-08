@@ -16,6 +16,31 @@ $authName = $authName !== '' ? $authName : ($authUser['email'] ?? '');
 $pdo = getPDO();
 $userType = $authUser['type'] ?? 'client';
 
+// ── POST Actions ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['generate_facture'])) {
+        $idAchat = (int) $_POST['generate_facture'];
+        $pdo->prepare("INSERT INTO facture (idAchat, etat, dateFac) VALUES (?, 'non payée', NOW())")->execute([$idAchat]);
+        header('Location: dashboard.php?section=achats'); exit;
+    }
+    if (isset($_POST['save_promo'])) {
+        $idArt = (int) $_POST['promo_idart'];
+        $old   = (int) $_POST['promo_old'];
+        $new   = (int) $_POST['promo_new'];
+        if ($idArt > 0 && $old > 0 && $new > 0) {
+            $pdo->prepare("INSERT INTO promo (idArt, oldPrice, newPrice) VALUES (?,?,?) ON DUPLICATE KEY UPDATE oldPrice=?, newPrice=?")->execute([$idArt,$old,$new,$old,$new]);
+        }
+        header('Location: dashboard.php?section=promos'); exit;
+    }
+    if (isset($_POST['update_stock'])) {
+        $idArt = (int) $_POST['idArt'];
+        $qty   = max(0, (int) $_POST['qty']);
+        $pdo->prepare("UPDATE article SET nbDispo=? WHERE idArt=?")->execute([$qty, $idArt]);
+        http_response_code(200); exit;
+    }
+}
+
+
 // Helper Functions
 function getStockStats($pdo) {
     try {
@@ -142,7 +167,6 @@ function getUserStats($pdo) {
     }
 }
 
-// Get data for dashboard
 $stockStats = getStockStats($pdo);
 $lowStockItems = getLowStockItems($pdo, 8);
 $recentInvoices = getRecentInvoices($pdo, 10);
@@ -180,44 +204,71 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                     <img src="img/logo1.png" alt="BibenQuinc Logo" class="logo-word">
                 </span>
             </div>
-
-            <nav class="nav">
-                <a href="catalogue.php">Catalogue</a>
-                <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
-                <a href="contact.php">Contact</a>
-                <?php endif; ?>
-                <div class="user-menu">
-                    <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" style="background-color: var(--bg, #f8fafc); border-radius: 8px;">
-                        <?= htmlspecialchars((string) $authName, ENT_QUOTES) ?>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="dashboard.php">Tableau de bord</a>
-                        <a href="profile.php">Mon profil</a>
-                        <a href="logout.php">Déconnexion</a>
-                    </div>
-                </div>
-                <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
-                <a href="#" class="cart-btn" onclick="return false;">
-                    Mon panier
-                </a>
-                <?php endif; ?>
-            </nav>
         </header>
 
-        <main class="dashboard-container">
-            <div class="dashboard-header">
-                <div class="welcome-msg">
-                    <h1>Tableau de bord - BibenQuinc</h1>
-                    <p>Gestion du stock, des factures et des promotions</p>
-                </div>
-            </div>
+        <div class="dash-layout">
 
-            <!-- Key Statistics Cards -->
-            <div class="dashboard-grid">
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="dash-sidebar-inner">
+                <div class="dash-sidebar-header">
+                    <div class="dash-avatar"><?= mb_strtoupper(mb_substr($authName, 0, 1)) ?></div>
+                    <div>
+                        <div class="dash-username"><?= htmlspecialchars($authName, ENT_QUOTES) ?></div>
+                        <div class="dash-role">Professionnel</div>
+                    </div>
+                </div>
+
+                <nav class="dash-nav">
+                    <div class="dash-nav-group">
+                        <span class="dash-nav-label">Vue d'ensemble</span>
+                        <a href="#section-overview" class="dash-nav-link active" onclick="showSection('overview',this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            Tableau de bord
+                        </a>
+                    </div>
+
+                    <div class="dash-nav-group">
+                        <span class="dash-nav-label">Gestion</span>
+                        <a href="#section-clients" class="dash-nav-link" onclick="showSection('clients',this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Gestion des clients
+                        </a>
+                        <a href="#section-stock" class="dash-nav-link" onclick="showSection('stock',this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                            Gestion du stock
+                        </a>
+                        <a href="#section-achats" class="dash-nav-link" onclick="showSection('achats',this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                            Gestion des achats
+                        </a>
+                        <a href="#section-promos" class="dash-nav-link" onclick="showSection('promos',this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                            Promotions & Réductions
+                        </a>
+                    </div>
+
+                    <div class="dash-nav-group">
+                        <span class="dash-nav-label">Compte</span>
+                        <a href="profile.php" class="dash-nav-link">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                            Mon profil
+                        </a>
+                        <a href="catalogue.php" class="dash-nav-link">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                            Retour au catalogue
+                        </a>
+                        <a href="logout.php" class="dash-nav-link" style="color:#ef4444">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Déconnexion
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="dashboard-container">
+
+            <div class="dashboard-grid" style="margin-bottom:32px">
                 <div class="stat-card">
                     <div class="stat-icon stock">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -273,10 +324,13 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                 </div>
             </div>
 
-            <!-- Main Content Grid -->
-            <div class="dashboard-content">
-
-                <!-- Stock Management Section -->
+            <div id="section-overview">
+            <div class="dashboard-header">
+                <div class="welcome-msg">
+                    <h1>Tableau de bord</h1>
+                    <p>Bienvenue, <?= htmlspecialchars($authName, ENT_QUOTES) ?> — gestion complète BibenQuinc</p>
+                </div>
+            </div>
                 <section class="dashboard-section">
                     <div class="section-header">
                         <h2>
@@ -347,7 +401,6 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                     </div>
                 </section>
 
-                <!-- Invoices Section -->
                 <section class="dashboard-section">
                     <div class="section-header">
                         <h2>
@@ -418,7 +471,6 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                     </div>
                 </section>
 
-                <!-- Promotions Section -->
                 <section class="dashboard-section">
                     <div class="section-header">
                         <h2>
@@ -454,7 +506,6 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                     </div>
                 </section>
 
-                <!-- Sales Overview Section -->
                 <?php if (!empty($salesData)): ?>
                 <section class="dashboard-section">
                     <div class="section-header">
@@ -490,7 +541,6 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
                 </section>
                 <?php endif; ?>
 
-                <!-- Top Products Section -->
                 <?php if (!empty($topProducts)): ?>
                 <section class="dashboard-section">
                     <div class="section-header">
@@ -535,7 +585,104 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
 
             </div>
 
+            <div id="section-clients" style="display:none">
+                <div class="dashboard-header"><h1>Gestion des clients</h1><p>Liste et gestion de tous les utilisateurs inscrits</p></div>
+                <section class="dashboard-section">
+                    <div class="section-header"><h2>Clients inscrits</h2></div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Nom</th><th>Email</th><th>Tél.</th><th>Type</th><th>Inscrit le</th></tr></thead>
+                            <tbody>
+                            <?php
+                            try {
+                                $stmtU = $pdo->query("SELECT idUtili, nom, prenom, email, numTel, type, created_at FROM utilisateur ORDER BY created_at DESC");
+                                foreach ($stmtU->fetchAll() as $u): ?>
+                                <tr>
+                                    <td><strong>#<?= $u['idUtili'] ?></strong></td>
+                                    <td><?= htmlspecialchars($u['prenom'] . ' ' . $u['nom']) ?></td>
+                                    <td><?= htmlspecialchars($u['email']) ?></td>
+                                    <td><?= htmlspecialchars($u['numTel']) ?></td>
+                                    <td><span class="badge <?= $u['type'] === 'professionnel' ? 'warning' : 'success' ?>"><?= htmlspecialchars($u['type']) ?></span></td>
+                                    <td><?= date('d/m/Y', strtotime($u['created_at'])) ?></td>
+                                </tr>
+                                <?php endforeach;
+                            } catch(Exception $e) { echo '<tr><td colspan="6" class="text-center">Erreur de chargement</td></tr>'; } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <div id="section-achats" style="display:none">
+                <div class="dashboard-header"><h1>Gestion des achats</h1><p>Suivi des commandes et génération de factures</p></div>
+                <section class="dashboard-section">
+                    <div class="section-header"><h2>Commandes récentes</h2></div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead><tr><th>#Achat</th><th>Client</th><th>Total</th><th>Date</th><th>Facture</th><th>Action</th></tr></thead>
+                            <tbody>
+                            <?php
+                            try {
+                                $stmtA = $pdo->query("SELECT a.idAchat, a.total, a.dateAchat, u.nom, u.prenom, f.idFac, f.etat FROM achat a JOIN utilisateur u ON a.idClient = u.idUtili LEFT JOIN facture f ON f.idAchat = a.idAchat ORDER BY a.dateAchat DESC LIMIT 20");
+                                foreach ($stmtA->fetchAll() as $achat): ?>
+                                <tr>
+                                    <td><strong>#<?= $achat['idAchat'] ?></strong></td>
+                                    <td><?= htmlspecialchars($achat['prenom'] . ' ' . $achat['nom']) ?></td>
+                                    <td><?= number_format($achat['total'], 0, ',', ' ') ?> DA</td>
+                                    <td><?= date('d/m/Y H:i', strtotime($achat['dateAchat'])) ?></td>
+                                    <td><?php if ($achat['idFac']): ?><span class="badge <?= $achat['etat'] === 'payée' ? 'success' : 'warning' ?>"><?= htmlspecialchars($achat['etat']) ?></span><?php else: ?><span class="badge alert">Non générée</span><?php endif; ?></td>
+                                    <td>
+                                        <?php if (!$achat['idFac']): ?>
+                                        <form method="post" action="" style="display:inline">
+                                            <input type="hidden" name="generate_facture" value="<?= $achat['idAchat'] ?>">
+                                            <button type="submit" class="btn-small">Générer facture</button>
+                                        </form>
+                                        <?php else: ?>
+                                        <button class="btn-small" onclick="viewInvoice(<?= $achat['idFac'] ?>)">Voir</button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach;
+                            } catch(Exception $e) { echo '<tr><td colspan="6" class="text-center">Erreur de chargement</td></tr>'; } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ── Promotions ── -->
+            <div id="section-promos" style="display:none">
+                <div class="dashboard-header"><h1>Promotions &amp; Réductions</h1><p>Gérez les offres et remises sur les articles</p></div>
+                <section class="dashboard-section">
+                    <div class="section-header"><h2>Promotions actives</h2><button class="btn-small" onclick="document.getElementById('add-promo-form').classList.toggle('hidden')">+ Ajouter</button></div>
+                    <div id="add-promo-form" class="hidden" style="background:var(--bg);border-radius:8px;padding:20px;margin-bottom:20px;border:1px solid var(--border)">
+                        <form method="post" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+                            <div><label style="font-size:12px;font-weight:600;color:var(--text-muted)">Article (ID)</label><input type="number" name="promo_idart" placeholder="ID article" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></div>
+                            <div><label style="font-size:12px;font-weight:600;color:var(--text-muted)">Ancien prix (DA)</label><input type="number" name="promo_old" placeholder="Ex: 5000" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></div>
+                            <div><label style="font-size:12px;font-weight:600;color:var(--text-muted)">Nouveau prix (DA)</label><input type="number" name="promo_new" placeholder="Ex: 3500" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></div>
+                            <button type="submit" name="save_promo" class="btn-small">Enregistrer</button>
+                        </form>
+                    </div>
+                    <div class="promotions-grid">
+                    <?php foreach ($promotions as $promo): ?>
+                        <div class="promo-card">
+                            <div class="promo-badge">-<?= $promo['discount_percent'] ?>%</div>
+                            <h3><?= htmlspecialchars($promo['intitule']) ?></h3>
+                            <p class="category"><?= htmlspecialchars($promo['intituleCat']) ?></p>
+                            <div class="promo-prices">
+                                <span class="old-price"><?= number_format($promo['oldPrice'], 0, ',', ' ') ?> DA</span>
+                                <span class="new-price"><?= number_format($promo['newPrice'], 0, ',', ' ') ?> DA</span>
+                            </div>
+                            <button class="btn-small" onclick="editPromo(<?= $promo['idArt'] ?>)">Modifier</button>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (empty($promotions)): ?><div class="empty-state"><p>Aucune promotion active</p></div><?php endif; ?>
+                    </div>
+                </section>
+            </div>
+
         </main>
+        </div><!-- /dash-layout -->
 
         <footer class="site-footer">
             <p>© 2026 BibenQuinc - Tous droits réservés</p>
@@ -543,412 +690,33 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
     </div>
 
     <style>
-        /* Dashboard Container */
-        .dashboard-container {
-            padding: 32px 24px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .dashboard-header {
-            margin-bottom: 40px;
-        }
-
-        .dashboard-header h1 {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 8px;
-        }
-
-        .dashboard-header p {
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-
-        /* Statistics Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--r-lg);
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            transition: all var(--t);
-        }
-
-        .stat-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        .stat-icon.stock { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .stat-icon.invoices { background: linear-gradient(135deg, #10b981, #059669); }
-        .stat-icon.promotions { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .stat-icon.revenue { background: linear-gradient(135deg, #e85d04, #c44d00); }
-
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .stat-subtext {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* Dashboard Content */
-        .dashboard-content {
-            display: grid;
-            gap: 32px;
-        }
-
-        .dashboard-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--r-lg);
-            padding: 28px;
-            overflow-x: auto;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .section-header h2 {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            margin: 0;
-        }
-
-        .section-header svg {
-            color: var(--accent);
-        }
-
-        .view-all {
-            color: var(--accent);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all var(--t);
-        }
-
-        .view-all:hover {
-            gap: 8px;
-        }
-
-        /* Summary Cards */
-        .stock-summary,
-        .invoice-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .summary-item {
-            background: var(--bg);
-            padding: 16px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            border-left: 4px solid var(--accent);
-        }
-
-        .summary-item span {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .summary-item strong {
-            font-size: 24px;
-            color: var(--text);
-            font-weight: 700;
-        }
-
-        .summary-item.success { border-left-color: #10b981; }
-        .summary-item.warning { border-left-color: #f59e0b; }
-        .summary-item.danger { border-left-color: #ef4444; }
-
-        /* Tables */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        .data-table thead {
-            background: var(--bg);
-            border-bottom: 2px solid var(--border);
-        }
-
-        .data-table th {
-            padding: 16px;
-            text-align: left;
-            font-weight: 700;
-            color: var(--text);
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .data-table td {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        .data-table tbody tr:hover {
-            background: var(--bg);
-        }
-
-        .data-table .text-center {
-            text-align: center;
-            color: var(--text-muted);
-        }
-
-        /* Badges */
-        .badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge.success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .badge.warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .badge.alert {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .badge.danger {
-            background: #fecaca;
-            color: #7f1d1d;
-        }
-
-        /* Promotions Grid */
-        .promotions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
-        }
-
-        .promo-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--r-md);
-            padding: 16px;
-            position: relative;
-            transition: all var(--t);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .promo-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-            transform: translateY(-4px);
-        }
-
-        .promo-badge {
-            position: absolute;
-            top: -12px;
-            right: 12px;
-            background: var(--accent);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .promo-card h3 {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text);
-            margin: 16px 0 4px 0;
-        }
-
-        .promo-card .category {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-        }
-
-        .promo-prices {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            margin-bottom: 12px;
-            flex-grow: 1;
-        }
-
-        .old-price {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-decoration: line-through;
-        }
-
-        .new-price {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--accent);
-        }
-
-        /* Buttons */
-        .btn-small {
-            padding: 8px 12px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--t);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-small:hover {
-            background: var(--accent-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(232, 93, 4, 0.2);
-        }
-
-        .btn-primary {
-            padding: 12px 24px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: var(--r-md);
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all var(--t);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-dark);
-            transform: translateY(-2px);
-        }
-
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-muted);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .dashboard-container {
-                padding: 20px 16px;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .dashboard-header h1 {
-                font-size: 24px;
-            }
-
-            .data-table {
-                font-size: 12px;
-            }
-
-            .data-table th,
-            .data-table td {
-                padding: 12px;
-            }
-
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .promotions-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 12px;
-            }
-        }
-
-        body.elec .stat-card {
-            border-color: var(--border);
-        }
-
-        body.elec .data-table thead {
-            background: var(--bg);
-        }
-
-        body.elec .section-header {
-            border-bottom-color: var(--border);
-        }
+        /* ── Dash Layout ── */
+        
     </style>
 
     <script>
+        const SECTIONS = ['overview','clients','stock','achats','promos'];
+
+        function showSection(id, linkEl) {
+            SECTIONS.forEach(s => {
+                const el = document.getElementById('section-' + s);
+                if (el) el.style.display = s === id ? '' : 'none';
+            });
+            document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active'));
+            if (linkEl) linkEl.classList.add('active');
+            history.replaceState(null, '', '?section=' + id);
+        }
+
+        // Auto-activate section from URL param on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(location.search);
+            const sec = params.get('section');
+            if (sec && SECTIONS.includes(sec)) {
+                const link = document.querySelector('.dash-nav-link[onclick*="\'' + sec + '\'"]');
+                showSection(sec, link);
+            }
+        });
+
         function toggleUserMenu(e) {
             e.preventDefault();
             const dropdown = document.getElementById('userDropdown');
@@ -960,28 +728,119 @@ $totalRevenue = array_sum(array_column($salesData, 'total_sales'));
         document.addEventListener('click', function (e) {
             const userMenu = document.querySelector('.user-menu');
             if (userMenu && !userMenu.contains(e.target)) {
-                document.getElementById('userDropdown').classList.remove('open');
-                document.getElementById('userMenuBtn').classList.remove('active');
+                document.getElementById('userDropdown')?.classList.remove('open');
+                document.getElementById('userMenuBtn')?.classList.remove('active');
             }
         });
 
         function editStock(productId) {
-            alert('Modifier le stock du produit #' + productId);
-            // Implement stock editing functionality
+            const qty = prompt('Nouveau stock pour le produit #' + productId + ' :');
+            if (qty !== null && !isNaN(parseInt(qty))) {
+                fetch('', { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: 'update_stock=1&idArt=' + productId + '&qty=' + parseInt(qty) })
+                    .then(() => location.reload());
+            }
         }
 
-        function viewInvoice(invoiceId) {
-            alert('Voir la facture #' + invoiceId);
-            // Implement invoice viewing functionality
+        function openFacture(idFac, idAchat, client, total, date, etat) {
+            document.getElementById('fac-id').textContent    = 'FAC-' + String(idFac).padStart(4,'0');
+            document.getElementById('fac-order').textContent = 'BQ-2026-' + String(idAchat).padStart(4,'0');
+            document.getElementById('fac-client').textContent = client;
+            document.getElementById('fac-total').textContent  = total + ' DA';
+            document.getElementById('fac-date').textContent   = date;
+            const badge = document.getElementById('fac-etat');
+            badge.textContent = etat === 'payée' ? 'Payée' : 'Non payée';
+            badge.className   = 'badge ' + (etat === 'payée' ? 'success' : 'warning');
+
+            // Load article details via AJAX
+            fetch('facture_detail.php?idAchat=' + idAchat)
+                .then(r => r.json())
+                .then(items => {
+                    const cont = document.getElementById('fac-items');
+                    if (!items.length) { cont.innerHTML = '<p style="color:var(--text-muted)">Aucun article trouvé.</p>'; return; }
+                    cont.innerHTML = items.map(i => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+                            <div>
+                                <div style="font-weight:600;font-size:14px">${i.intitule}</div>
+                                <div style="font-size:12px;color:var(--text-muted)">Qté : ${i.quantite} × ${Number(i.prix).toLocaleString('fr-DZ')} DA</div>
+                            </div>
+                            <div style="font-weight:700;color:var(--accent)">${(i.quantite * i.prix).toLocaleString('fr-DZ')} DA</div>
+                        </div>`).join('');
+                })
+                .catch(() => {
+                    document.getElementById('fac-items').innerHTML = '<p style="color:var(--text-muted)">Erreur de chargement.</p>';
+                });
+
+            document.getElementById('factureModal').classList.add('open');
+        }
+
+        function closeFacture() {
+            document.getElementById('factureModal').classList.remove('open');
         }
 
         function editPromo(productId) {
-            alert('Modifier la promotion du produit #' + productId);
-            // Implement promotion editing functionality
+            alert('Modification de la promotion pour le produit #' + productId);
         }
     </script>
+
+<!-- ══ Facture Modal ══ -->
+<div id="factureModal" style="display:none" onclick="if(event.target===this)closeFacture()" class="fac-modal-bg">
+</div>
+<div id="factureModalPanel" class="fac-modal-panel">
+    <div class="fac-modal-head">
+        <div>
+            <h2 style="margin:0;font-size:18px">Facture <span id="fac-id"></span></h2>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Commande <span id="fac-order"></span></div>
+        </div>
+        <button onclick="closeFacture()" class="close-btn" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text)">✕</button>
+    </div>
+    <div class="fac-modal-body">
+        <div class="fac-info-grid">
+            <div><span class="fac-label">Client</span><span id="fac-client" class="fac-value"></span></div>
+            <div><span class="fac-label">Date</span><span id="fac-date" class="fac-value"></span></div>
+            <div><span class="fac-label">Statut</span><span id="fac-etat" class="badge"></span></div>
+            <div><span class="fac-label">Total</span><span id="fac-total" class="fac-value" style="color:var(--accent);font-size:18px;font-weight:800"></span></div>
+        </div>
+        <h3 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:20px 0 10px">Articles commandés</h3>
+        <div id="fac-items"></div>
+    </div>
+</div>
+
+<style>
+.fac-modal-bg {
+    position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;
+    backdrop-filter:blur(4px);
+    opacity:0;visibility:hidden;transition:all .3s;
+}
+.fac-modal-bg.open { opacity:1;visibility:visible; }
+.fac-modal-bg.open ~ #factureModalPanel { transform:translateY(0); }
+#factureModalPanel {
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-40%);
+    width:520px;max-width:95vw;max-height:85vh;
+    background:var(--surface);border-radius:16px;
+    box-shadow:0 24px 80px rgba(0,0,0,.35);
+    z-index:2001;overflow:hidden;display:flex;flex-direction:column;
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.fac-modal-bg.open + #factureModalPanel { transform:translate(-50%,-50%); }
+.fac-modal-head {
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.fac-modal-body { padding:24px;overflow-y:auto;flex:1; }
+.fac-info-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;background:var(--bg);border-radius:10px;padding:16px;border:1px solid var(--border); }
+.fac-label { display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px; }
+.fac-value { font-size:14px;font-weight:600;color:var(--text); }
+</style>
+
+<script>
+// Sync modal backdrop open state with panel
+document.getElementById('factureModal').addEventListener('transitionend', function() {
+    const panel = document.getElementById('factureModalPanel');
+    if (this.classList.contains('open')) panel.style.display = 'flex';
+});
+document.getElementById('factureModal').style.display = '';
+</script>
 
 </body>
 
 </html>
-

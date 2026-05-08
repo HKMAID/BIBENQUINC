@@ -13,40 +13,48 @@ if (!$authUser) {
 }
 
 /* ════════════════════════════════════════════════
-   Orders — stockées en session pour démo.
-   Structure: [{ id, date, items:[{name,price,qty,image}], total }]
+   Orders — récupérées depuis la base de données.
    ════════════════════════════════════════════════ */
-if (!isset($_SESSION['orders'])) {
-    // Seed with demo data so the page is never empty
-    $all = catalogueProducts();
-    $demoItems1 = [
-        ['name'=>$all[6]['name'],'price'=>$all[6]['price'],'qty'=>1,'image'=>$all[6]['image']],
-        ['name'=>$all[1]['name'],'price'=>$all[1]['price'],'qty'=>2,'image'=>$all[1]['image']],
-    ];
-    $demoItems2 = [
-        ['name'=>$all[15]['name'],'price'=>$all[15]['price'],'qty'=>1,'image'=>$all[15]['image']],
-        ['name'=>$all[12]['name'],'price'=>$all[12]['price'],'qty'=>1,'image'=>$all[12]['image']],
-        ['name'=>$all[0]['name'], 'price'=>$all[0]['price'], 'qty'=>3,'image'=>$all[0]['image']],
-    ];
-    $_SESSION['orders'] = [
-        [
-            'id'    => 'BQ-2026-001',
-            'date'  => '2026-04-18T10:23:00',
-            'items' => $demoItems1,
-            'total' => array_reduce($demoItems1, fn($s,$i)=>$s+$i['price']*$i['qty'], 0),
-            'status'=> 'livré',
-        ],
-        [
-            'id'    => 'BQ-2026-002',
-            'date'  => '2026-05-02T14:55:00',
-            'items' => $demoItems2,
-            'total' => array_reduce($demoItems2, fn($s,$i)=>$s+$i['price']*$i['qty'], 0),
-            'status'=> 'en cours',
-        ],
+require_once __DIR__ . '/../config/db.php';
+$pdo = getPDO();
+
+$stmt = $pdo->prepare('
+    SELECT a.idAchat, a.dateAchat, a.total
+    FROM achat a
+    WHERE a.idClient = ?
+');
+$stmt->execute([$authUser['id']]);
+$db_orders = $stmt->fetchAll();
+
+$orders = [];
+foreach ($db_orders as $row) {
+    // Récupérer les articles pour chaque achat
+    $stmtItems = $pdo->prepare('
+        SELECT aa.quantite, art.intitule, art.prix, art.photo
+        FROM article_achat aa
+        JOIN article art ON aa.idArticle = art.idArt
+        WHERE aa.idAchat = ?
+    ');
+    $stmtItems->execute([$row['idAchat']]);
+    $items = [];
+    foreach ($stmtItems->fetchAll() as $item) {
+        $items[] = [
+            'name'  => $item['intitule'],
+            'price' => (int) $item['prix'],
+            'qty'   => (int) $item['quantite'],
+            'image' => $item['photo']
+        ];
+    }
+
+    $orders[] = [
+        'id'     => 'BQ-' . date('Y', strtotime($row['dateAchat'])) . '-' . str_pad((string)$row['idAchat'], 3, '0', STR_PAD_LEFT),
+        'date'   => $row['dateAchat'],
+        'items'  => $items,
+        'total'  => (int) $row['total'],
+        'status' => 'livré' // Status par défaut pour la démo
     ];
 }
 
-$orders = $_SESSION['orders'];
 
 /* ── Sorting ── */
 $sort = $_GET['sort'] ?? 'date_desc';

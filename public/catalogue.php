@@ -9,7 +9,20 @@ $authName = $authName !== '' ? $authName : ($authUser['email'] ?? '');
 $flash = getFlash();
 $all_products = catalogueProducts();
 
-$wishlist = $_SESSION['wishlist'] ?? [];
+$wishlist = [];
+if ($authUser) {
+    try {
+        require_once __DIR__ . '/../config/db.php';
+        $pdo = getPDO();
+        $stmt = $pdo->prepare('SELECT a.intitule FROM favori f JOIN article a ON f.idArticle = a.idArt WHERE f.idClient = ?');
+        $stmt->execute([$authUser['id']]);
+        $wishlist = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        $wishlist = $_SESSION['wishlist'] ?? [];
+    }
+} else {
+    $wishlist = $_SESSION['wishlist'] ?? [];
+}
 $search  = isset($_GET['search'])   ? trim($_GET['search'])   : '';
 $cat_key = isset($_GET['category']) ? trim($_GET['category']) : 'quincaillerie';
 $subcat = isset($_GET['cat'])  ? trim($_GET['cat'])  : '';
@@ -83,6 +96,15 @@ function productCard($p) {
     $wishlistClass = $isFav ? "wishlist-btn active" : "wishlist-btn";
     $wishlistTitle = $isFav ? "Retirer des favoris" : "Ajouter aux favoris";
 
+    $wishlistBtn = '';
+    if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel') {
+        $wishlistBtn = "<a href=\"{$wishlistUrl}\" class=\"{$wishlistClass}\" title=\"{$wishlistTitle}\">
+                <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
+                    <path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"></path>
+                </svg>
+            </a>";
+    }
+
     $ratingHtml = "
         <div style=\"display:flex;align-items:center;gap:4px;margin-bottom:6px;\">
             <svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"#f59e0b\" stroke=\"none\">
@@ -104,11 +126,7 @@ function productCard($p) {
         </div>
         <div class=\"actions\">
             <div class=\"unavailable-msg\">Article Indisponible</div>
-            <a href=\"{$wishlistUrl}\" class=\"{$wishlistClass}\" title=\"{$wishlistTitle}\">
-                <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
-                    <path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"></path>
-                </svg>
-            </a>
+            {$wishlistBtn}
         </div>
     </div>";
     }
@@ -121,7 +139,7 @@ function productCard($p) {
                     data-nbdispo=\"{$nbDispo}\"
                     onclick=\"addToCart(this)\">+ Panier</button>";
     }
-    
+
     return "
     <div class=\"product-card\" data-category=\"{$cat_key}\">
         <a class=\"product-card-link\" href=\"{$articleUrl}\" aria-label=\"Voir l'article {$name}\"></a>
@@ -133,11 +151,7 @@ function productCard($p) {
         </div>
         <div class=\"actions\">
             {$cartBtn}
-            <a href=\"{$wishlistUrl}\" class=\"{$wishlistClass}\" title=\"{$wishlistTitle}\">
-                <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
-                    <path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"></path>
-                </svg>
-            </a>
+            {$wishlistBtn}
         </div>
     </div>";
 }
@@ -190,7 +204,7 @@ function productCard($p) {
       <?php endif; ?>
       <?php if ($authUser): ?>
         <div class="user-menu">
-          <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
+          <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" style="background-color: <?= $is_elec ? 'rgba(11, 105, 248, 0.2)' : 'rgba(232, 93, 4, 0.2)' ?>;">
             <?= htmlspecialchars($authName, ENT_QUOTES) ?>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
@@ -198,8 +212,12 @@ function productCard($p) {
           </button>
           <div class="user-dropdown" id="userDropdown">
             <a href="profile.php">Mon profil</a>
+            <?php if (($authUser['type'] ?? null) === 'professionnel'): ?>
+            <a href="dashboard.php">Tableau de bord</a>
+            <?php else: ?>
             <a href="achats.php">Mes achats</a>
             <a href="pref.php">Mes préférences</a>
+            <?php endif; ?>
             <a href="logout.php">Déconnexion</a>
           </div>
         </div>
@@ -423,13 +441,340 @@ function productCard($p) {
       <span class="total-label">Total TTC</span>
       <span class="total-amount" id="drawerTotal">0 <span>DA</span></span>
     </div>
-    <button class="checkout-btn">Commander maintenant →</button>
+    <button class="checkout-btn" onclick="openCheckout()"><?= $authUser ? 'Commander maintenant →' : 'Se connecter pour commander' ?></button>
     <span class="clear-link" onclick="clearCart()">Vider le panier</span>
   </div>
 </div>
 
+<!-- ══ Checkout Payment Panel ══ -->
+<div class="checkout-overlay" id="checkoutOverlay" onclick="if(event.target===this)closeCheckout()"></div>
+<div class="checkout-panel" id="checkoutPanel">
+  <div class="checkout-panel-head">
+    <h2>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Finaliser la commande
+    </h2>
+    <button class="close-btn" onclick="closeCheckout()">✕</button>
+  </div>
+  <div class="checkout-panel-body">
+
+    <!-- Récap panier -->
+    <div class="checkout-recap">
+      <h3>Récapitulatif</h3>
+      <div id="checkoutItems" class="checkout-items-list"></div>
+      <div class="checkout-subtotal-row">
+        <span>Sous-total articles</span>
+        <strong id="checkoutSubtotal">0 DA</strong>
+      </div>
+    </div>
+
+    <!-- Livraison -->
+    <div class="checkout-delivery">
+      <h3>Mode de livraison</h3>
+
+      <label class="delivery-option">
+        <input type="radio" name="delivery" value="home" id="del-home" checked onchange="updateDelivery()">
+        <div class="delivery-option-content"><div>
+            <div class="delivery-name">Livraison à domicile</div>
+            <div class="delivery-desc">Livré chez vous partout en Algérie</div>
+          </div>
+          <div class="delivery-price">600 DA</div>
+        </div>
+      </label>
+
+      <label class="delivery-option">
+        <input type="radio" name="delivery" value="zrexpress" id="del-zr" onchange="updateDelivery()">
+        <div class="delivery-option-content">
+          <div>
+            <div class="delivery-name">Bureau ZrExpress</div>
+            <div class="delivery-desc">Retrait dans un bureau ZrExpress</div>
+          </div>
+        </div>
+      </label>
+
+      <div class="wilaya-select-wrap" id="wilayaWrap" style="display:none">
+        <select id="wilayaSelect" onchange="updateDelivery()" class="wilaya-select">
+          <option value="">— Choisir votre wilaya —</option>
+          <optgroup label="200 DA — Béjaïa">
+            <option value="06" data-fee="200">Béjaïa (06)</option>
+          </optgroup>
+          <optgroup label="400 DA — Autres wilayas">
+            <option value="15" data-fee="400">Tizi-Ouzou (15)</option>
+            <option value="10" data-fee="400">Bouira (10)</option>
+            <option value="16" data-fee="400">Alger (16)</option>
+            <option value="18" data-fee="400">Jijel (18)</option>
+            <option value="34" data-fee="400">Bordj Bou Arréridj (34)</option>
+            <option value="19" data-fee="400">Sétif (19)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <!-- Total final -->
+    <div class="checkout-total-block">
+      <div class="checkout-total-row">
+        <span>Articles</span><span id="ctSubtotal">0 DA</span>
+      </div>
+      <div class="checkout-total-row">
+        <span>Livraison</span><span id="ctDelivery">600 DA</span>
+      </div>
+      <div class="checkout-total-row checkout-total-main">
+        <span>Total</span><span id="ctTotal">0 DA</span>
+      </div>
+    </div>
+
+    <?php if ($authUser): ?>
+    <!-- Submit -->
+    <button class="checkout-submit-btn" id="checkoutSubmitBtn" onclick="submitOrder()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Confirmer la commande
+    </button>
+    <?php else: ?>
+    <a href="cnx.php" class="checkout-submit-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Se connecter pour commander
+    </a>
+    <?php endif; ?>
+
+  </div>
+</div>
+
+<style>
+/* ── Checkout Panel ── */
+.checkout-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1100;
+  opacity: 0; visibility: hidden;
+  transition: all .3s ease;
+  backdrop-filter: blur(3px);
+}
+.checkout-overlay.open { opacity: 1; visibility: visible; }
+
+.checkout-panel {
+  position: fixed; top: 0; right: 0;
+  width: 480px; max-width: 100%;
+  height: 100%;
+  background: var(--surface);
+  z-index: 1101;
+  transform: translateX(100%);
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+  box-shadow: -12px 0 48px rgba(0,0,0,.25);
+}
+.checkout-panel.open { transform: translateX(0); }
+
+.checkout-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.checkout-panel-head h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18px; font-weight: 700; color: var(--text); margin: 0;
+}
+.checkout-panel-head h2 svg { color: var(--accent); }
+
+.checkout-panel-body {
+  flex: 1; overflow-y: auto;
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+.checkout-recap h3,
+.checkout-delivery h3 {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--text-muted); margin: 0 0 12px;
+}
+
+.checkout-items-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.checkout-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg); border-radius: 10px; padding: 10px 12px;
+  border: 1px solid var(--border);
+}
+.checkout-item img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; }
+.checkout-item-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.checkout-item-qty { font-size: 12px; color: var(--text-muted); }
+.checkout-item-price { font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.checkout-subtotal-row {
+  display: flex; justify-content: space-between;
+  font-size: 14px; color: var(--text-muted); padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.checkout-subtotal-row strong { color: var(--text); }
+
+/* Delivery options */
+.delivery-option {
+  display: block; cursor: pointer; margin-bottom: 10px;
+}
+.delivery-option input { display: none; }
+.delivery-option-content {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  transition: all .2s ease;
+}
+.delivery-option input:checked + .delivery-option-content {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.delivery-icon { font-size: 22px; flex-shrink: 0; }
+.delivery-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.delivery-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.delivery-price { margin-left: auto; font-weight: 800; color: var(--accent); font-size: 15px; white-space: nowrap; }
+
+.wilaya-select-wrap { margin-top: 8px; padding: 0 4px; }
+.wilaya-select {
+  width: 100%; padding: 10px 14px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 14px; font-family: var(--fb);
+  outline: none; transition: border-color .2s;
+}
+.wilaya-select:focus { border-color: var(--accent); }
+
+/* Total block */
+.checkout-total-block {
+  background: var(--bg); border-radius: 12px;
+  border: 1px solid var(--border); padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.checkout-total-row {
+  display: flex; justify-content: space-between;
+  font-size: 14px; color: var(--text-muted);
+}
+.checkout-total-row span:last-child { font-weight: 600; color: var(--text); }
+.checkout-total-main {
+  padding-top: 10px; border-top: 2px solid var(--border);
+  font-size: 16px; font-weight: 800;
+}
+.checkout-total-main span { color: var(--text) !important; }
+.checkout-total-main span:last-child { color: var(--accent) !important; font-size: 20px; }
+
+/* Submit */
+.checkout-submit-btn {
+  width: 100%; padding: 16px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 12px;
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .2s ease;
+  font-family: var(--fb);
+}
+.checkout-submit-btn:hover { background: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,93,4,.3); }
+.checkout-submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Success state */
+.checkout-success {
+  text-align: center; padding: 40px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.checkout-success-icon { font-size: 64px; }
+.checkout-success h2 { font-size: 22px; font-weight: 800; color: var(--text); }
+.checkout-success p { color: var(--text-muted); font-size: 15px; }
+</style>
+
 <script src="script.js"></script>
 <script src="catalogue.js" defer></script>
+<script>
+const DELIVERY_FEES = { home: 600 };
+let deliveryFee = 600;
+
+function openCheckout() {
+  if (cart.length === 0) { alert('Votre panier est vide.'); return; }
+  renderCheckoutItems();
+  updateDelivery();
+  document.getElementById('checkoutOverlay').classList.add('open');
+  document.getElementById('checkoutPanel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCheckout() {
+  document.getElementById('checkoutOverlay').classList.remove('open');
+  document.getElementById('checkoutPanel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderCheckoutItems() {
+  const cont = document.getElementById('checkoutItems');
+  cont.innerHTML = cart.map(i => `
+    <div class="checkout-item">
+      <img src="${i.image}" alt="">
+      <div class="checkout-item-name">${i.name}</div>
+      <div class="checkout-item-qty">×${i.qty}</div>
+      <div class="checkout-item-price">${fmt(i.price * i.qty)} DA</div>
+    </div>`).join('');
+  const sub = getTotal();
+  document.getElementById('checkoutSubtotal').textContent = fmt(sub) + ' DA';
+  document.getElementById('ctSubtotal').textContent = fmt(sub) + ' DA';
+}
+
+function updateDelivery() {
+  const mode = document.querySelector('input[name="delivery"]:checked')?.value;
+  const wilayaWrap = document.getElementById('wilayaWrap');
+  const zrPrice = document.getElementById('zrPrice');
+
+  if (mode === 'zrexpress') {
+    wilayaWrap.style.display = '';
+    const sel = document.getElementById('wilayaSelect');
+    const fee = sel.selectedIndex > 0 ? +sel.options[sel.selectedIndex].dataset.fee : 0;
+    deliveryFee = fee;
+    zrPrice.textContent = fee ? fee + ' DA' : 'Choisir wilaya';
+  } else {
+    wilayaWrap.style.display = 'none';
+    deliveryFee = 600;
+    zrPrice.textContent = 'Choisir wilaya';
+  }
+
+  document.getElementById('ctDelivery').textContent = deliveryFee ? fmt(deliveryFee) + ' DA' : '— DA';
+  document.getElementById('ctTotal').textContent = fmt(getTotal() + deliveryFee) + ' DA';
+}
+
+function submitOrder() {
+  const mode = document.querySelector('input[name="delivery"]:checked')?.value;
+  if (mode === 'zrexpress') {
+    const sel = document.getElementById('wilayaSelect');
+    if (!sel.value) { alert('Veuillez choisir votre wilaya.'); return; }
+  }
+  if (!deliveryFee && mode === 'zrexpress') { alert('Veuillez choisir votre wilaya.'); return; }
+
+  const btn = document.getElementById('checkoutSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Traitement…';
+
+  const wilayaVal = mode === 'zrexpress' ? document.getElementById('wilayaSelect').value : '';
+  const total = getTotal() + deliveryFee;
+
+  fetch('checkout_submit.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cart, deliveryMode: mode, wilaya: wilayaVal, deliveryFee, total })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      cart = []; saveCart(); updateCartUI();
+      document.getElementById('checkoutPanel').querySelector('.checkout-panel-body').innerHTML = `
+        <div class="checkout-success">
+          <div class="checkout-success-icon">✅</div>
+          <h2>Commande confirmée !</h2>
+          <p>Votre commande <strong>#${data.orderId}</strong> a été enregistrée avec succès.<br>
+          Livraison : <strong>${mode === 'home' ? 'À domicile' : 'Bureau ZrExpress'}</strong> — ${fmt(deliveryFee)} DA</p>
+          <button class="checkout-submit-btn" onclick="closeCheckout()" style="width:auto;padding:12px 24px">Fermer</button>
+        </div>`;
+    } else {
+      alert(data.error || 'Une erreur est survenue.');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Confirmer la commande';
+    }
+  })
+  .catch(() => {
+    alert('Erreur réseau. Veuillez réessayer.');
+    btn.disabled = false;
+  });
+}
+</script>
 
 </body>
 </html>

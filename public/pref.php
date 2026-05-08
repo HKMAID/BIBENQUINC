@@ -13,11 +13,15 @@ if (!$authUser) {
 }
 
 /* ── Wishlist actions ── */
+require_once __DIR__ . '/../config/db.php';
+$pdo = getPDO();
+
 if (isset($_GET['add'])) {
     $productName = trim($_GET['add']);
-    if (!isset($_SESSION['wishlist'])) $_SESSION['wishlist'] = [];
-    if (!in_array($productName, $_SESSION['wishlist'])) {
-        $_SESSION['wishlist'][] = $productName;
+    $idArt = getProductIdByName($productName);
+    if ($idArt) {
+        $stmt = $pdo->prepare('INSERT IGNORE INTO favori (idClient, idArticle) VALUES (?, ?)');
+        $stmt->execute([$authUser['id'], $idArt]);
         setFlash('success', '❤ Produit ajouté aux favoris');
     }
     header('Location: pref.php'); exit;
@@ -25,20 +29,25 @@ if (isset($_GET['add'])) {
 
 if (isset($_GET['remove'])) {
     $productName = trim($_GET['remove']);
-    $_SESSION['wishlist'] = array_values(
-        array_filter($_SESSION['wishlist'] ?? [], fn($p) => $p !== $productName)
-    );
-    setFlash('info', 'Produit retiré des favoris');
+    $idArt = getProductIdByName($productName);
+    if ($idArt) {
+        $stmt = $pdo->prepare('DELETE FROM favori WHERE idClient = ? AND idArticle = ?');
+        $stmt->execute([$authUser['id'], $idArt]);
+        setFlash('info', 'Produit retiré des favoris');
+    }
     header('Location: pref.php'); exit;
 }
 
 $flash = getFlash();
 
 /* ── Data ── */
-$all_products    = catalogueProducts();
-$wishlist        = $_SESSION['wishlist'] ?? [];
-$search          = trim($_GET['search'] ?? '');
-$sort            = $_GET['sort'] ?? '';
+$all_products = catalogueProducts();
+$stmt = $pdo->prepare('SELECT a.intitule FROM favori f JOIN article a ON f.idArticle = a.idArt WHERE f.idClient = ?');
+$stmt->execute([$authUser['id']]);
+$wishlist = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+$search = trim($_GET['search'] ?? '');
+$sort   = $_GET['sort'] ?? '';
 
 $wishlist_products = array_values(array_filter($all_products, fn($p) => in_array($p['name'], $wishlist)));
 
