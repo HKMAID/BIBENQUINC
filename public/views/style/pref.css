@@ -1,12 +1,8 @@
-/* pref.css — extra wishlist styles (kept minimal; most in profile.css) */
-
-/* Heart icon — filled red in pref page cards */
 .pref-card .remove-btn svg {
   width: 18px;
   height: 18px;
 }
 
-/* Unavailable message in pref cards */
 .pref-card .unavailable-msg {
   flex: 1;
   padding: 10px 14px;

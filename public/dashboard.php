@@ -10,13 +10,18 @@ if (!$authUser) {
     exit;
 }
 
+if (($authUser['type'] ?? 'client') !== 'professionnel') {
+    setFlash('error', 'Accès non autorisé. Réservé aux professionnels.');
+    header('Location: catalogue.php');
+    exit;
+}
+
 $authName = trim(($authUser['firstname'] ?? '') . ' ' . ($authUser['lastname'] ?? ''));
 $authName = $authName !== '' ? $authName : ($authUser['email'] ?? '');
 
 $pdo      = getPDO();
 $userType = $authUser['type'] ?? 'client';
 
-/* ── POST Actions ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['generate_facture'])) {
         $idAchat = (int) $_POST['generate_facture'];
@@ -50,9 +55,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(200);
         exit;
     }
+    if (isset($_POST['add_article'])) {
+        $intitule = trim($_POST['intitule'] ?? '');
+        $idCat    = (int)($_POST['idCat']   ?? 0);
+        $prix     = (int)($_POST['prix']     ?? 0);
+        $nbDispo  = max(0, (int)($_POST['nbDispo'] ?? 0));
+        $marque   = trim($_POST['marque']   ?? '');
+        $photo    = '';
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $ext     = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg','jpeg','png','webp','gif'];
+            if (in_array($ext, $allowed)) {
+                $fname = 'art_' . uniqid() . '.' . $ext;
+                $dest  = __DIR__ . '/img/' . $fname;
+                if (move_uploaded_file($_FILES['photo']['tmp_name'], $dest)) {
+                    $photo = 'img/' . $fname;
+                }
+            }
+        }
+        if ($intitule !== '' && $idCat > 0 && $prix > 0 && $marque !== '') {
+            $pdo->prepare("INSERT INTO article (idCat, intitule, prix, nbDispo, marque, photo) VALUES (?,?,?,?,?,?)")
+                ->execute([$idCat, $intitule, $prix, $nbDispo, $marque, $photo]);
+        }
+        header('Location: dashboard.php?section=stock');
+        exit;
+    }
 }
 
-/* ── Helper Functions ── */
+function formatCategoryName(string $cat): string {
+    $map = [
+        'outillage' => 'Outillage', 'visserie&boulonnerie' => 'Visserie & Boulonnerie',
+        'plomberie' => 'Plomberie', 'peinture' => 'Peinture', 'jardinage' => 'Jardinage',
+        'serrurerie' => 'Serrurerie', 'ampoules&eclairage' => 'Ampoules & Éclairage',
+        'cables&fils' => 'Câbles & Fils', 'disjoncteurs' => 'Disjoncteurs',
+        'prises&interrupteurs' => 'Prises & Interrupteurs', 'projecteurs' => 'Projecteurs',
+        'comptage' => 'Comptage'
+    ];
+    return $map[$cat] ?? ucfirst($cat);
+}
+
 function getStockStats(PDO $pdo): array {
     try {
         return $pdo->query("
@@ -70,7 +111,7 @@ function getStockStats(PDO $pdo): array {
 function getAllStockItems(PDO $pdo): array {
     try {
         return $pdo->query("
-            SELECT a.idArt, a.intitule, a.nbDispo, c.intituleCat, a.prix
+            SELECT a.idArt, a.intitule, a.marque, a.nbDispo, c.intituleCat, a.prix
             FROM article a
             JOIN categorie c ON a.idCat = c.idCat
             ORDER BY a.nbDispo ASC")->fetchAll();
@@ -175,7 +216,6 @@ function getUserStats(PDO $pdo): array {
     }
 }
 
-/* ── Data Fetching ── */
 $stockStats    = getStockStats($pdo);
 $allStockItems = getAllStockItems($pdo);
 $recentInvoices= getRecentInvoices($pdo, 10);
@@ -185,35 +225,17 @@ $salesData     = getSalesData($pdo);
 $topProducts   = getTopProducts($pdo, 5);
 $userStats     = getUserStats($pdo);
 $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
+try {
+    $categories = $pdo->query("SELECT idCat, intituleCat FROM categorie ORDER BY intituleCat")->fetchAll();
+} catch (Exception $e) { $categories = []; }
+
+$pageTitle = 'Tableau de bord — BibenQuinc';
+$activeNav = 'dashboard';
+$extraCss  = ['views/style/dashboard.css'];
+include __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de bord — BibenQuinc</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dashboard.css">
-</head>
-<body>
-
-<div class="app">
-
-    <header class="site-header">
-        <div class="logo">
-            <span class="logo-bar"></span>
-            <span class="logo-image">
-                <img src="img/logo1.png" alt="BibenQuinc Logo" class="logo-word">
-            </span>
-        </div>
-    </header>
 
     <div class="dash-layout">
-
-        <!-- ══════════════════ SIDEBAR ══════════════════ -->
         <aside class="dash-sidebar" id="dashSidebar">
             <div class="dash-sidebar-inner">
 
@@ -249,36 +271,13 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                             Promotions &amp; Réductions
                         </a>
                     </div>
-
-                    <div class="dash-nav-group">
-                        <span class="dash-nav-label">Compte</span>
-
-                        <a href="profile.php" class="dash-nav-link">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                            Mon profil
-                        </a>
-
-                        <a href="catalogue.php" class="dash-nav-link">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-                            Retour au catalogue
-                        </a>
-
-                        <a href="logout.php" class="dash-nav-link" style="color:#ef4444">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                            Déconnexion
-                        </a>
-                    </div>
                 </nav>
 
             </div>
         </aside>
-        <!-- /sidebar -->
 
-        <!-- ══════════════════ MAIN ══════════════════ -->
         <main class="dashboard-main">
         <div class="dashboard-container">
-
-            <!-- ── Clients ── -->
             <div id="section-clients" style="display:none">
                 <div class="dashboard-header">
                     <h1>Gestion des clients</h1>
@@ -290,6 +289,19 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                             Clients inscrits
                         </h2>
+                    </div>
+                    <div class="section-toolbar">
+                        <div class="search-wrap">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="search" class="toolbar-search" placeholder="Rechercher nom, email…" oninput="filterTable('section-clients', this.value, [1,2])">
+                        </div>
+                        <select class="toolbar-sort" onchange="sortTableBy('section-clients', this.value)">
+                            <option value="">Trier par…</option>
+                            <option value="1:str:asc">Nom A→Z</option>
+                            <option value="1:str:desc">Nom Z→A</option>
+                            <option value="4:str:desc">Inscription (récent)</option>
+                            <option value="4:str:asc">Inscription (ancien)</option>
+                        </select>
                     </div>
                     <div class="table-responsive">
                         <table class="data-table">
@@ -340,9 +352,7 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                     </div>
                 </section>
             </div>
-            <!-- /clients -->
 
-            <!-- ── Stock ── -->
             <div id="section-stock" style="display:none">
                 <div class="dashboard-header">
                     <h1>Gestion du Stock</h1>
@@ -354,6 +364,70 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
                             Tous les Articles
                         </h2>
+                        <button class="btn-small" onclick="toggleAddArticle()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Ajouter un article
+                        </button>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="add-article-form" class="add-article-form hidden">
+                        <div class="form-grid">
+                            <div>
+                                <label for="art-intitule">Intitulé *</label>
+                                <input id="art-intitule" type="text" name="intitule" class="form-input" placeholder="Nom de l'article" maxlength="200" required>
+                            </div>
+                            <div>
+                                <label for="art-marque">Marque *</label>
+                                <input id="art-marque" type="text" name="marque" class="form-input" placeholder="Ex : Bosch" maxlength="70" required>
+                            </div>
+                            <div>
+                                <label for="art-cat">Catégorie *</label>
+                                <select id="art-cat" name="idCat" class="form-input" required>
+                                    <option value="">— Sélectionner —</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= (int)$cat['idCat'] ?>"><?= htmlspecialchars(formatCategoryName($cat['intituleCat'])) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="art-prix">Prix (DA) *</label>
+                                <input id="art-prix" type="number" name="prix" class="form-input" placeholder="Ex : 5000" min="1" required>
+                            </div>
+                            <div>
+                                <label for="art-stock">Stock initial</label>
+                                <input id="art-stock" type="number" name="nbDispo" class="form-input" placeholder="0" min="0" value="0">
+                            </div>
+                            <div>
+                                <label>Photo (jpg, png, webp)</label>
+                                <div class="photo-preview-wrap">
+                                    <input type="file" name="photo" class="form-input" accept=".jpg,.jpeg,.png,.webp,.gif" onchange="previewPhoto(this)" style="flex:1">
+                                    <img id="photo-preview" src="" alt="Aperçu">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" name="add_article" class="btn-small">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Enregistrer
+                            </button>
+                            <button type="button" class="btn-ghost" onclick="toggleAddArticle()">Annuler</button>
+                        </div>
+                    </form>
+
+                    <div class="section-toolbar">
+                        <div class="search-wrap">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="search" class="toolbar-search" placeholder="Rechercher article, marque…" oninput="filterTable('section-stock', this.value, [0,1,2])">
+                        </div>
+                        <select class="toolbar-sort" onchange="sortTableBy('section-stock', this.value)">
+                            <option value="">Trier par…</option>
+                            <option value="0:str:asc">Article A→Z</option>
+                            <option value="0:str:desc">Article Z→A</option>
+                            <option value="3:num:asc">Prix ↑</option>
+                            <option value="3:num:desc">Prix ↓</option>
+                            <option value="4:num:asc">Stock ↑</option>
+                            <option value="4:num:desc">Stock ↓</option>
+                        </select>
                     </div>
 
                     <div class="stock-summary">
@@ -376,6 +450,7 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                             <thead>
                                 <tr>
                                     <th>Article</th>
+                                    <th>Marque</th>
                                     <th>Catégorie</th>
                                     <th>Prix</th>
                                     <th>Stock</th>
@@ -388,7 +463,8 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                                 <?php foreach ($allStockItems as $item): ?>
                                 <tr data-art-id="<?= (int)$item['idArt'] ?>">
                                     <td><strong><?= htmlspecialchars($item['intitule']) ?></strong></td>
-                                    <td><?= htmlspecialchars($item['intituleCat']) ?></td>
+                                    <td><?= htmlspecialchars($item['marque']) ?></td>
+                                    <td><?= htmlspecialchars(formatCategoryName($item['intituleCat'])) ?></td>
                                     <td><?= number_format((float)$item['prix'], 0, ',', ' ') ?> DA</td>
                                     <td class="stock-qty"><?= (int)$item['nbDispo'] ?> unités</td>
                                     <td>
@@ -416,9 +492,7 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                     </div>
                 </section>
             </div>
-            <!-- /stock -->
 
-            <!-- ── Achats ── -->
             <div id="section-achats" style="display:none">
                 <div class="dashboard-header">
                     <h1>Gestion des achats</h1>
@@ -430,6 +504,19 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
                             Commandes récentes
                         </h2>
+                    </div>
+                    <div class="section-toolbar">
+                        <div class="search-wrap">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="search" class="toolbar-search" placeholder="Rechercher référence, client…" oninput="filterTable('section-achats', this.value, [0,1])">
+                        </div>
+                        <select class="toolbar-sort" onchange="sortTableBy('section-achats', this.value)">
+                            <option value="">Trier par…</option>
+                            <option value="4:str:desc">Date (récent)</option>
+                            <option value="4:str:asc">Date (ancien)</option>
+                            <option value="3:num:desc">Total ↓</option>
+                            <option value="3:num:asc">Total ↑</option>
+                        </select>
                     </div>
                     <div class="table-responsive">
                         <table class="data-table">
@@ -494,7 +581,7 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                                         <?php if (!$achat['idFac']): ?>
                                             <form method="post" style="display:inline">
                                                 <input type="hidden" name="generate_facture" value="<?= (int)$achat['idAchat'] ?>">
-                                                <button type="submit" class="btn-small">Générer</button>
+                                                <button type="submit" class="btn-small">Créer</button>
                                             </form>
                                         <?php else: ?>
                                             <button class="btn-small"
@@ -526,9 +613,7 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                     </div>
                 </section>
             </div>
-            <!-- /achats -->
 
-            <!-- ── Promotions ── -->
             <div id="section-promos" style="display:none">
                 <div class="dashboard-header">
                     <h1>Promotions &amp; Réductions</h1>
@@ -544,8 +629,13 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                             + Ajouter
                         </button>
                     </div>
+                    <div class="section-toolbar" style="margin-bottom:0;margin-top:4px">
+                        <div class="search-wrap">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="search" class="toolbar-search" placeholder="Rechercher article, catégorie…" oninput="filterPromos(this.value)">
+                        </div>
+                    </div>
 
-                    <!-- Add promo form -->
                     <form method="post" id="add-promo-form" class="add-promo-form hidden">
                         <div>
                             <label for="promo_idart">Article (ID)</label>
@@ -567,7 +657,7 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                         <div class="promo-card">
                             <div class="promo-badge">-<?= (int)$promo['discount_percent'] ?>%</div>
                             <h3><?= htmlspecialchars($promo['intitule']) ?></h3>
-                            <p class="category"><?= htmlspecialchars($promo['intituleCat']) ?></p>
+                            <p class="category"><?= htmlspecialchars(formatCategoryName($promo['intituleCat'])) ?></p>
                             <div class="promo-prices">
                                 <span class="old-price"><?= number_format((float)$promo['oldPrice'], 0, ',', ' ') ?> DA</span>
                                 <span class="new-price"><?= number_format((float)$promo['newPrice'], 0, ',', ' ') ?> DA</span>
@@ -581,119 +671,13 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
                     </div>
                 </section>
             </div>
-            <!-- /promos -->
-
-        </div><!-- /.dashboard-container -->
+        </div>
+        <footer class="site-footer">
+            <p>&copy; 2026 BibenQuinc &mdash; Tous droits réservés</p>
+        </footer>
         </main>
-        <!-- /main -->
-
-    </div><!-- /.dash-layout -->
-
-    <footer class="site-footer">
-        <p>© 2026 BibenQuinc — Tous droits réservés</p>
-    </footer>
-
-</div><!-- /.app -->
-
-<!-- ══════════════════ MODAL : Facture ══════════════════ -->
-<div id="factureModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="fac-modal-title">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3 id="fac-modal-title">
-                Facture <span id="fac-id"></span>
-            </h3>
-            <button class="modal-close" onclick="closeFacture()" aria-label="Fermer">×</button>
-        </div>
-
-        <div class="fac-meta">
-            <div class="fac-meta-item">
-                <span class="fac-meta-label">Commande</span>
-                <span class="fac-meta-value" id="fac-order"></span>
-            </div>
-            <div class="fac-meta-item">
-                <span class="fac-meta-label">Client</span>
-                <span class="fac-meta-value" id="fac-client"></span>
-            </div>
-            <div class="fac-meta-item">
-                <span class="fac-meta-label">Date</span>
-                <span class="fac-meta-value" id="fac-date"></span>
-            </div>
-            <div class="fac-meta-item">
-                <span class="fac-meta-label">Statut</span>
-                <span class="fac-meta-value"><span id="fac-etat" class="badge"></span></span>
-            </div>
-        </div>
-
-        <p class="fac-items-title">Articles commandés</p>
-        <div id="fac-items"></div>
-
-        <div class="modal-footer">
-            <div style="font-size:18px;font-weight:800;color:var(--accent)">
-                Total : <span id="fac-total"></span>
-            </div>
-            <button class="btn-ghost" onclick="closeFacture()">Fermer</button>
-        </div>
     </div>
-</div>
 
-<!-- ══════════════════ MODAL : Modifier stock ══════════════════ -->
-<div id="stockModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="stock-modal-title">
-    <div class="modal-box" style="max-width:360px">
-        <div class="modal-header">
-            <h3 id="stock-modal-title">Modifier le stock</h3>
-            <button class="modal-close" onclick="closeStockModal()" aria-label="Fermer">×</button>
-        </div>
-        <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px">
-            Produit <strong id="stock-product-id"></strong>
-        </p>
-        <input id="stock-qty-input"
-               type="number"
-               class="stock-qty-field"
-               min="0"
-               placeholder="Nouvelle quantité"
-               onkeydown="if(event.key==='Enter')submitStockUpdate()">
-        <p class="stock-hint" style="margin-top:8px">Entrez 0 pour indiquer une rupture de stock.</p>
-        <div class="modal-footer">
-            <button class="btn-ghost" onclick="closeStockModal()">Annuler</button>
-            <button id="stock-save-btn" class="btn-primary" onclick="submitStockUpdate()">Enregistrer</button>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════ MODAL : Modifier promotion ══════════════════ -->
-<div id="editPromoModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-promo-title">
-    <div class="modal-box" style="max-width:420px">
-        <div class="modal-header">
-            <h3 id="edit-promo-title">Modifier la promotion</h3>
-            <button class="modal-close" onclick="closeEditPromo()" aria-label="Fermer">×</button>
-        </div>
-        <form method="post">
-            <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px">
-                Produit <strong id="edit-promo-id-label"></strong>
-            </p>
-            <input type="hidden" name="promo_idart">
-            <div style="display:grid;gap:14px">
-                <div>
-                    <label class="form-label" style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">
-                        Ancien prix (DA)
-                    </label>
-                    <input type="number" name="promo_old" class="form-input" placeholder="Ex : 5000" min="1" required>
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">
-                        Nouveau prix (DA)
-                    </label>
-                    <input type="number" name="promo_new" class="form-input" placeholder="Ex : 3500" min="1" required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-ghost" onclick="closeEditPromo()">Annuler</button>
-                <button type="submit" name="save_promo" class="btn-primary">Enregistrer</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script src="dashboard.js"></script>
+<script src="views/script/dashboard.js"></script>
 </body>
 </html>

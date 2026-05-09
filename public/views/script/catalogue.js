@@ -13,7 +13,6 @@ function toggleUserMenu(e) {
   }
 }
 
-// Close dropdown when clicking outside
 document.addEventListener('click', function (e) {
   const userMenu = document.querySelector('.user-menu');
   if (userMenu && !userMenu.contains(e.target)) {
@@ -27,38 +26,33 @@ document.addEventListener('click', function (e) {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadCart(); // Load cart from localStorage first
+  loadCart();
   updateCartUI();
   initScrollObserver();
   updateSwipeHint('quinc');
-  // Scroll to correct page on load
   const isElec = document.body.classList.contains('elec');
   if (isElec) {
     goToPage('elec');
   }
 });
 
-// Category switching
 function onRadioChange(cat) {
   const category = cat === 'elec' ? 'electricite' : 'quincaillerie';
   const url = new URL(window.location);
   url.searchParams.set('category', category);
-  url.searchParams.delete('cat'); // Reset cat when switching categories
-  url.searchParams.delete('page'); // Reset page
+  url.searchParams.delete('cat');
+  url.searchParams.delete('page');
   window.location.href = url.toString();
 }
 
-// Sort menu toggle
 function toggleSortMenu(btn) {
   btn.classList.toggle('active');
-  // Toggle .open on the sort-menu sibling
   const sortMenu = btn.nextElementSibling;
   if (sortMenu && sortMenu.classList.contains('sort-menu')) {
     sortMenu.classList.toggle('open');
   }
 }
 
-// Close sort menu when clicking outside
 document.addEventListener('click', function (e) {
   if (!e.target.closest('.search-box')) {
     document.querySelectorAll('.sort-btn').forEach(btn => {
@@ -67,7 +61,6 @@ document.addEventListener('click', function (e) {
   }
 });
 
-// Page navigation
 function goToPage(page) {
   const hPager = document.getElementById('hPager');
   const targetPage = document.getElementById(`page-${page}`);
@@ -77,7 +70,6 @@ function goToPage(page) {
   }
 }
 
-// Compteur dynamique
 function updateProductCount() {
   const visibleProducts = document.querySelectorAll('.product-card:not(.hidden)');
   const quincCount = document.getElementById('product-count-quinc');
@@ -98,7 +90,6 @@ function updateProductCount() {
   }
 }
 
-// Wishlist button toggle
 document.querySelectorAll('.wishlist-btn').forEach(btn => {
   btn.addEventListener('click', function (e) {
     e.preventDefault();

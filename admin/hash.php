@@ -6,12 +6,6 @@ require_once __DIR__ . '/includes/auth_db.php';
 
 initSession();
 
-// Sécurité : Optionnel, on peut vérifier que l'utilisateur est admin ou pro s'il est loggué
-// Mais ici c'est un utilitaire "admin", donc on le laisse accessible
-// if (!isLoggedIn() || currentUser()['type'] !== 'professionnel') {
-//     die("Accès non autorisé.");
-// }
-
 $error   = '';
 $success = '';
 

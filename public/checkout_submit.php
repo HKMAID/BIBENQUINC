@@ -27,14 +27,12 @@ $deliveryMode = in_array($data['deliveryMode'] ?? '', ['home', 'zrexpress'], tru
 $deliveryFee  = (int) ($data['deliveryFee'] ?? 600);
 $wilaya       = htmlspecialchars(trim($data['wilaya'] ?? ''), ENT_QUOTES);
 
-// Validate delivery fee
 $validFees = [0, 200, 400, 600];
 if (!in_array($deliveryFee, $validFees, true)) {
     echo json_encode(['ok' => false, 'error' => 'Frais de livraison invalides.']);
     exit;
 }
 
-// Validate wilaya for ZrExpress
 $validWilayas = ['06', '15', '10', '16', '18', '34', '19'];
 if ($deliveryMode === 'zrexpress' && !in_array($wilaya, $validWilayas, true)) {
     echo json_encode(['ok' => false, 'error' => 'Wilaya non couverte par ZrExpress.']);
@@ -44,8 +42,6 @@ if ($deliveryMode === 'zrexpress' && !in_array($wilaya, $validWilayas, true)) {
 try {
     $pdo = getPDO();
     $pdo->beginTransaction();
-
-    // Validate cart items against DB stock
     $articlesSubTotal = 0;
     $cartWithIds = [];
 
@@ -56,7 +52,6 @@ try {
 
         if ($name === '' || $qty < 1 || $price < 0) continue;
 
-        // Fetch article from DB
         $stmt = $pdo->prepare('SELECT idArt, prix, nbDispo, intitule FROM article WHERE intitule = ? LIMIT 1');
         $stmt->execute([$name]);
         $article = $stmt->fetch();
@@ -84,14 +79,12 @@ try {
 
     $totalWithDelivery = $articlesSubTotal + $deliveryFee;
 
-    // 1. Insert achat
     $stmtAchat = $pdo->prepare(
         'INSERT INTO achat (idClient, total, dateAchat) VALUES (?, ?, NOW())'
     );
     $stmtAchat->execute([$authUser['id'], $totalWithDelivery]);
     $idAchat = (int) $pdo->lastInsertId();
 
-    // 2. Insert article_achat + deduct stock
     $stmtArt = $pdo->prepare(
         'INSERT INTO article_achat (idAchat, idArticle, quantite) VALUES (?, ?, ?)'
     );
@@ -108,7 +101,6 @@ try {
         }
     }
 
-    // 3. Auto-generate facture
     $pdo->prepare("INSERT INTO facture (idAchat, etat, dateFac) VALUES (?, 'non payée', NOW())")->execute([$idAchat]);
 
     $pdo->commit();

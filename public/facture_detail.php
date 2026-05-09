@@ -8,7 +8,6 @@ require_once __DIR__ . '/../config/db.php';
 initSession();
 $authUser = currentUser();
 
-// Only authenticated professionals can consult invoices
 if (!$authUser || ($authUser['type'] ?? 'client') !== 'professionnel') {
     echo json_encode([]);
     exit;

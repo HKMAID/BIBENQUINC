@@ -23,7 +23,7 @@
   </div>
 </div>
 
-<script src="script.js"></script>
+<script src="views/script/script.js"></script>
 <script>
 function toggleUserMenu(e) {
   e.preventDefault();

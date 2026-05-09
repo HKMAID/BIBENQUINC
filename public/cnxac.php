@@ -1,11 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * cnxac.php — Traitement du formulaire de connexion (action POST séparée).
- * Redirige vers cnx.php si accès GET direct.
- */
-
 require_once __DIR__ . '/includes/session.php';
 require_once __DIR__ . '/includes/auth_db.php';
 
@@ -15,7 +10,6 @@ if (isLoggedIn()) {
     redirectTo('catalogue.php');
 }
 
-// N'accepte que les requêtes POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirectTo('cnx.php');
 }
@@ -38,7 +32,6 @@ if (!$result['ok']) {
 loginUser($result['user']);
 setFlash('success', 'Connexion réussie. Bienvenue !');
 
-// Redirection selon le type de compte
 $dest = ($result['user']['type'] ?? 'client') === 'professionnel'
         ? 'dashboard.php'
         : 'catalogue.php';

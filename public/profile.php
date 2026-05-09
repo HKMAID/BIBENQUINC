@@ -15,7 +15,6 @@ if (!$authUser) {
 $errors  = [];
 $success = false;
 
-/* ── Handle form POST ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstname  = trim($_POST['firstname']       ?? '');
     $lastname   = trim($_POST['lastname']        ?? '');
@@ -45,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$upd['ok']) {
             $errors[] = $upd['error'];
         } else {
-            // Rafraîchir la session
             $_SESSION['user']['firstname'] = $firstname;
             $_SESSION['user']['lastname']  = $lastname;
             $_SESSION['user']['phone']     = $phone;
@@ -55,21 +53,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setFlash('success', 'Vos informations ont été mises à jour avec succès.');
             header('Location: profile.php');
             exit;
-        }       // end else (upd ok)
-    }           // end if empty(errors)
-}               // end POST
+        }
+    }
+}
 
 
 $flash   = getFlash();
 $pageTitle = 'Mon profil — BibenQuinc';
 $pageDesc  = 'Gérez vos informations personnelles sur BibenQuinc.';
 $activeNav = 'profile';
-$extraCss  = ['profile.css'];
+$extraCss  = ['views/style/profile.css'];
 
 include __DIR__ . '/includes/header.php';
 ?>
 
-  <!-- Page Banner -->
   <div class="acc-banner">
     <div class="acc-banner-inner">
       <div class="acc-avatar"><?= mb_strtoupper(mb_substr($authName, 0, 1)) ?></div>
@@ -97,7 +94,6 @@ include __DIR__ . '/includes/header.php';
 
     <form class="profile-form" method="post" action="" id="profileForm" novalidate>
 
-      <!-- ── Section : Coordonnées ── -->
       <section class="form-section">
         <div class="form-section-head">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -150,7 +146,6 @@ include __DIR__ . '/includes/header.php';
         </div>
       </section>
 
-      <!-- ── Section : Mot de passe ── -->
       <section class="form-section">
         <div class="form-section-head">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>

@@ -1,7 +1,6 @@
 let cart = [];
 const fmt = n => n.toLocaleString('fr-DZ');
 
-// Load cart from localStorage on page load
 function loadCart() {
   try {
     const saved = localStorage.getItem('bq_cart');
@@ -19,7 +18,6 @@ function sidebarClick(el) {
   el.classList.add('active');
 }
 
-/* ══ Quantity stepper (product grid) ══ */
 function adjustQty(btn, delta) {
   const input = btn.parentElement.querySelector('input');
   const addBtn = btn.closest('.actions').querySelector('.add-btn');
@@ -40,7 +38,6 @@ function triggerAddButtonAnimation(btn) {
   }, 130);
 }
 
-/* ══ Cart – add item ══ */
 function addToCart(btn) {
   const name = btn.dataset.name;
   const price = +btn.dataset.price;
@@ -64,7 +61,7 @@ function addToCart(btn) {
     } else {
       ex.qty = newQty;
     }
-    ex.nbDispo = nbDispo; // refresh nbDispo
+    ex.nbDispo = nbDispo;
   } else {
     cart.push({ name, price, image, qty, nbDispo });
   }
@@ -76,22 +73,20 @@ function addToCart(btn) {
   if (cc) { cc.classList.add('ping'); setTimeout(() => cc.classList.remove('ping'), 250); }
 }
 
-/* ══ Cart – modify qty from drawer ══ */
 function changeItemQty(name, delta) {
   const item = cart.find(i => i.name === name);
   if (!item) return;
   const max = item.nbDispo || 999;
   const newQty = item.qty + delta;
-  
-  // Respect boundaries
+
   if (newQty < 1) {
-    removeItem(name); // Remove item if qty goes to 0
+    removeItem(name);
     return;
   }
   if (newQty > max) {
-    return; // Prevent increase if already at max
+    return;
   }
-  
+
   item.qty = newQty;
   saveCart();
   updateCartUI();
@@ -102,7 +97,7 @@ function setItemQty(name, val) {
   if (!item) return;
   const qty = parseInt(val, 10);
   if (isNaN(qty) || qty < 1) {
-    updateCartUI(); // Refresh UI if invalid input
+    updateCartUI();
     return;
   }
   const max = item.nbDispo || 999;
@@ -116,18 +111,18 @@ function setItemQty(name, val) {
   updateCartUI();
 }
 
-function removeItem(name) { 
-  cart = cart.filter(i => i.name !== name); 
-  saveCart(); 
-  updateCartUI(); 
+function removeItem(name) {
+  cart = cart.filter(i => i.name !== name);
+  saveCart();
+  updateCartUI();
 }
 
-function clearCart() { 
+function clearCart() {
   if (cart.length === 0) return;
   if (confirm('Êtes-vous sûr de vouloir vider le panier ?')) {
-    cart = []; 
+    cart = [];
     localStorage.removeItem('bq_cart');
-    updateCartUI(); 
+    updateCartUI();
   }
 }
 function saveCart() { localStorage.setItem('bq_cart', JSON.stringify(cart)); }
@@ -172,7 +167,6 @@ function updateCartUI() {
   }).join('');
 }
 
-/* ══ Drawer ══ */
 function openDrawer() {
   document.getElementById('cartDrawer').classList.add('open');
   document.getElementById('overlay').classList.add('open');
@@ -190,7 +184,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-/* ══ Horizontal page navigation ══ */
 let currentPage = 'quinc';
 let isScrolling = false;
 

@@ -41,7 +41,8 @@
   width: 100%;
   height: 100%;
   background: var(--accent);
-  border-left: none !important; /* eliminer la bordure blanche à gauche*/
+  border-left: none !important;
+  /* eliminer la bordure blanche */
   box-shadow: var(--sh-lg);
   overflow: hidden;
 }

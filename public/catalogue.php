@@ -69,11 +69,10 @@ $items_per_page = 12; // 3 lignes × 4 colonnes
 $current_products = $is_elec ? $elec_products : $quinc_products;
 $total_items = count($current_products);
 $total_pages = ceil($total_items / $items_per_page);
-$page = min($page, max(1, $total_pages)); // Clamp page entre 1 et total_pages
+$page = min($page, max(1, $total_pages));
 $offset = ($page - 1) * $items_per_page;
 $paginated_products = array_slice($current_products, $offset, $items_per_page);
 
-// Helper to render a product card
 function productCard($p) {
     global $wishlist, $authUser;
     $name  = htmlspecialchars($p['name'], ENT_QUOTES);
@@ -236,10 +235,7 @@ function productCard($p) {
     </nav>
   </header>
 
-  <!-- ═ Horizontal Pager ═ -->
   <div class="h-pager" id="hPager">
-
-    <!-- PAGE : Quincaillerie -->
     <div class="page" id="page-quinc">
       <div class="page-inner">
         <div class="sidebar">
@@ -330,7 +326,6 @@ function productCard($p) {
       </div>
     </div>
 
-    <!-- PAGE : Électricité -->
     <div class="page" id="page-elec">
       <div class="page-inner">
         <div class="sidebar">
@@ -417,18 +412,16 @@ function productCard($p) {
           <footer class="site-footer">
             <p>&copy; 2026 BibenQuinc. Tous droits réservés.</p>
           </footer>
-        </div> <!-- End main-content -->
-      </div> <!-- End page-inner -->
-    </div> <!-- End page-elec -->
-  </div><!-- /h-pager -->
-</div><!-- /app -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<!-- Swipe hint -->
 <div class="swipe-hint" id="swipeHint" onclick="goToPage('elec')">
   Électricité →
 </div>
 
-<!-- Overlay + Cart Drawer -->
 <div class="drawer-overlay" id="overlay" onclick="closeDrawer()"></div>
 <div class="cart-drawer" id="cartDrawer">
   <div class="drawer-head">
@@ -446,7 +439,6 @@ function productCard($p) {
   </div>
 </div>
 
-<!-- ══ Checkout Payment Panel ══ -->
 <div class="checkout-overlay" id="checkoutOverlay" onclick="if(event.target===this)closeCheckout()"></div>
 <div class="checkout-panel" id="checkoutPanel">
   <div class="checkout-panel-head">
@@ -458,7 +450,6 @@ function productCard($p) {
   </div>
   <div class="checkout-panel-body">
 
-    <!-- Récap panier -->
     <div class="checkout-recap">
       <h3>Récapitulatif</h3>
       <div id="checkoutItems" class="checkout-items-list"></div>
@@ -468,7 +459,6 @@ function productCard($p) {
       </div>
     </div>
 
-    <!-- Livraison -->
     <div class="checkout-delivery">
       <h3>Mode de livraison</h3>
 
@@ -510,7 +500,6 @@ function productCard($p) {
       </div>
     </div>
 
-    <!-- Total final -->
     <div class="checkout-total-block">
       <div class="checkout-total-row">
         <span>Articles</span><span id="ctSubtotal">0 DA</span>
@@ -524,7 +513,6 @@ function productCard($p) {
     </div>
 
     <?php if ($authUser): ?>
-    <!-- Submit -->
     <button class="checkout-submit-btn" id="checkoutSubmitBtn" onclick="submitOrder()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       Confirmer la commande
@@ -538,143 +526,6 @@ function productCard($p) {
 
   </div>
 </div>
-
-<style>
-/* ── Checkout Panel ── */
-.checkout-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 1100;
-  opacity: 0; visibility: hidden;
-  transition: all .3s ease;
-  backdrop-filter: blur(3px);
-}
-.checkout-overlay.open { opacity: 1; visibility: visible; }
-
-.checkout-panel {
-  position: fixed; top: 0; right: 0;
-  width: 480px; max-width: 100%;
-  height: 100%;
-  background: var(--surface);
-  z-index: 1101;
-  transform: translateX(100%);
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
-  display: flex; flex-direction: column;
-  box-shadow: -12px 0 48px rgba(0,0,0,.25);
-}
-.checkout-panel.open { transform: translateX(0); }
-
-.checkout-panel-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.checkout-panel-head h2 {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 18px; font-weight: 700; color: var(--text); margin: 0;
-}
-.checkout-panel-head h2 svg { color: var(--accent); }
-
-.checkout-panel-body {
-  flex: 1; overflow-y: auto;
-  padding: 24px;
-  display: flex; flex-direction: column; gap: 24px;
-}
-
-.checkout-recap h3,
-.checkout-delivery h3 {
-  font-size: 13px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .07em; color: var(--text-muted); margin: 0 0 12px;
-}
-
-.checkout-items-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-.checkout-item {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--bg); border-radius: 10px; padding: 10px 12px;
-  border: 1px solid var(--border);
-}
-.checkout-item img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; }
-.checkout-item-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
-.checkout-item-qty { font-size: 12px; color: var(--text-muted); }
-.checkout-item-price { font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
-.checkout-subtotal-row {
-  display: flex; justify-content: space-between;
-  font-size: 14px; color: var(--text-muted); padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-.checkout-subtotal-row strong { color: var(--text); }
-
-/* Delivery options */
-.delivery-option {
-  display: block; cursor: pointer; margin-bottom: 10px;
-}
-.delivery-option input { display: none; }
-.delivery-option-content {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 16px; border-radius: 12px;
-  border: 2px solid var(--border);
-  background: var(--bg);
-  transition: all .2s ease;
-}
-.delivery-option input:checked + .delivery-option-content {
-  border-color: var(--accent);
-  background: var(--accent-glow);
-}
-.delivery-icon { font-size: 22px; flex-shrink: 0; }
-.delivery-name { font-size: 14px; font-weight: 700; color: var(--text); }
-.delivery-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.delivery-price { margin-left: auto; font-weight: 800; color: var(--accent); font-size: 15px; white-space: nowrap; }
-
-.wilaya-select-wrap { margin-top: 8px; padding: 0 4px; }
-.wilaya-select {
-  width: 100%; padding: 10px 14px; border-radius: 8px;
-  border: 1.5px solid var(--border); background: var(--surface);
-  color: var(--text); font-size: 14px; font-family: var(--fb);
-  outline: none; transition: border-color .2s;
-}
-.wilaya-select:focus { border-color: var(--accent); }
-
-/* Total block */
-.checkout-total-block {
-  background: var(--bg); border-radius: 12px;
-  border: 1px solid var(--border); padding: 16px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.checkout-total-row {
-  display: flex; justify-content: space-between;
-  font-size: 14px; color: var(--text-muted);
-}
-.checkout-total-row span:last-child { font-weight: 600; color: var(--text); }
-.checkout-total-main {
-  padding-top: 10px; border-top: 2px solid var(--border);
-  font-size: 16px; font-weight: 800;
-}
-.checkout-total-main span { color: var(--text) !important; }
-.checkout-total-main span:last-child { color: var(--accent) !important; font-size: 20px; }
-
-/* Submit */
-.checkout-submit-btn {
-  width: 100%; padding: 16px;
-  background: var(--accent); color: #fff;
-  border: none; border-radius: 12px;
-  font-size: 16px; font-weight: 700; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: all .2s ease;
-  font-family: var(--fb);
-}
-.checkout-submit-btn:hover { background: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,93,4,.3); }
-.checkout-submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* Success state */
-.checkout-success {
-  text-align: center; padding: 40px 20px;
-  display: flex; flex-direction: column; align-items: center; gap: 16px;
-}
-.checkout-success-icon { font-size: 64px; }
-.checkout-success h2 { font-size: 22px; font-weight: 800; color: var(--text); }
-.checkout-success p { color: var(--text-muted); font-size: 15px; }
-</style>
 
 <script src="script.js"></script>
 <script src="catalogue.js" defer></script>

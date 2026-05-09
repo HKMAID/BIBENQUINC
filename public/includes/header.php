@@ -1,6 +1,5 @@
 <?php
 /**
- * Shared header partial.
  * Expects: $authUser, $authName, $flash (already set by calling page)
  * Param: $activeNav — optional string: 'catalogue', 'contact', 'profile', 'achats', 'pref'
  */
@@ -19,8 +18,8 @@ $flash = $flash ?? null;
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="catalogue.css">
+  <link rel="stylesheet" href="views/style/style.css">
+  <link rel="stylesheet" href="views/style/catalogue.css">
   <?php foreach ($extraCss ?? [] as $css): ?>
   <link rel="stylesheet" href="<?= htmlspecialchars($css) ?>">
   <?php endforeach; ?>

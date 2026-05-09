@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/session.php';
+require_once __DIR__ . '/../config/db.php';
 
 initSession();
 
@@ -13,34 +14,36 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$authUser = currentUser();
+if (!$authUser) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Vous devez être connecté pour envoyer un message.']);
+    exit;
+}
+
 $subject = trim($_POST['subject'] ?? '');
 $message = trim($_POST['message'] ?? '');
 $autre_sujet = trim($_POST['autre_sujet'] ?? '');
 
 if (empty($subject) || empty($message)) {
-    echo json_encode(['error' => 'Tous les champs sont requis']);
+    echo json_encode(['error' => 'Tous les champs sont requis.']);
     exit;
 }
 
 if ($subject === 'autre' && empty($autre_sujet)) {
-    echo json_encode(['error' => 'Veuillez préciser votre sujet']);
+    echo json_encode(['error' => 'Veuillez préciser votre sujet.']);
     exit;
 }
 
 $final_subject = $subject === 'autre' ? $autre_sujet : $subject;
 
-$contact_data = [
-    'timestamp' => date('Y-m-d H:i:s'),
-    'user' => $_SESSION['nom'] ?? 'Anonyme',
-    'email' => $_SESSION['email'] ?? '',
-    'subject' => $final_subject,
-    'message' => $message,
-];
-
-$contacts_file = __DIR__ . '/../storage/contacts.json';
-$contacts = file_exists($contacts_file) ? json_decode(file_get_contents($contacts_file), true) : [];
-$contacts[] = $contact_data;
-file_put_contents($contacts_file, json_encode($contacts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-echo json_encode(['success' => 'Message envoyé avec succès']);
+try {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('INSERT INTO message (idClient, theme, contenu, date_msg) VALUES (?, ?, ?, NOW())');
+    $stmt->execute([$authUser['id'], $final_subject, $message]);
+    echo json_encode(['success' => 'Message envoyé avec succès.']);
+} catch (Exception $e) {
+    error_log('Contact form error: ' . $e->getMessage());
+    echo json_encode(['error' => 'Erreur lors de l\'envoi de votre message.']);
+}
 ?>

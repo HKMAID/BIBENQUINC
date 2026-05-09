@@ -12,9 +12,6 @@ if (!$authUser) {
     exit;
 }
 
-/* ════════════════════════════════════════════════
-   Orders — récupérées depuis la base de données.
-   ════════════════════════════════════════════════ */
 require_once __DIR__ . '/../config/db.php';
 $pdo = getPDO();
 
@@ -51,12 +48,11 @@ foreach ($db_orders as $row) {
         'date'   => $row['dateAchat'],
         'items'  => $items,
         'total'  => (int) $row['total'],
-        'status' => 'livré' // Status par défaut pour la démo
+        'status' => 'livré' 
     ];
 }
 
 
-/* ── Sorting ── */
 $sort = $_GET['sort'] ?? 'date_desc';
 usort($orders, function($a, $b) use ($sort) {
     return match($sort) {
@@ -76,12 +72,11 @@ $flash    = getFlash();
 $pageTitle = 'Mes achats — BibenQuinc';
 $pageDesc  = 'Historique de vos commandes BibenQuinc.';
 $activeNav = 'achats';
-$extraCss  = ['profile.css'];
+$extraCss  = ['views/style/profile.css'];
 
 include __DIR__ . '/includes/header.php';
 ?>
 
-  <!-- Page Banner -->
   <div class="acc-banner">
     <div class="acc-banner-inner">
       <div class="acc-avatar"><?= mb_strtoupper(mb_substr($authName, 0, 1)) ?></div>
@@ -93,8 +88,6 @@ include __DIR__ . '/includes/header.php';
   </div>
 
   <main class="acc-main">
-
-    <!-- Sort bar -->
     <div class="orders-toolbar">
       <span class="orders-count"><?= count($orders) ?> commande<?= count($orders) !== 1 ? 's' : '' ?></span>
       <div class="sort-pills">

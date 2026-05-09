@@ -142,7 +142,6 @@ body .site-footer a:hover {
   }
 }
 
-/* ── Shared auth helpers ── */
 .auth-page-wrap {
   display: flex;
   flex-direction: column;
@@ -175,26 +174,54 @@ body .site-footer a:hover {
   border: 1px solid #86efac;
 }
 
-.req { color: var(--accent); }
+.req {
+  color: var(--accent);
+}
 
-/* Password toggle */
-.pwd-group { position: relative; }
-.pwd-wrap { position: relative; }
-.pwd-wrap input { padding-right: 42px; }
+.pwd-group {
+  position: relative;
+}
+
+.pwd-wrap {
+  position: relative;
+}
+
+.pwd-wrap input {
+  padding-right: 42px;
+}
+
 .pwd-toggle {
   position: absolute;
-  top: 50%; right: 10px;
+  top: 50%;
+  right: 10px;
   transform: translateY(-50%);
-  background: none; border: none;
-  cursor: pointer; opacity: .5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: .5;
   color: var(--text-muted);
-  display: flex; padding: 4px;
+  display: flex;
+  padding: 4px;
   transition: opacity .2s;
 }
-.pwd-toggle svg { width: 18px; height: 18px; }
-.pwd-toggle:hover { opacity: 1; }
+
+.pwd-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pwd-toggle:hover {
+  opacity: 1;
+}
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

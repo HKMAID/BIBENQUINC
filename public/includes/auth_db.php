@@ -1,28 +1,13 @@
 <?php
 declare(strict_types=1);
 
-/**
- * auth_db.php — Couche d'accès aux utilisateurs via MySQL (table `utilisateur`).
- * Remplace auth_store.php (JSON).
- *
- * Colonnes utilisées :
- *   idUtili, nom, prenom, email, numTel, mdp, type, created_at, last_login
- */
-
 require_once dirname(__DIR__, 2) . '/config/db.php';
-
-/* ──────────────────────────────────────────────
-   Helpers internes
-   ────────────────────────────────────────────── */
 
 function _normalizeEmail(string $email): string
 {
     return strtolower(trim($email));
 }
 
-/**
- * Convertit une ligne DB en tableau normalisé attendu par le reste de l'appli.
- */
 function _rowToUser(array $row): array
 {
     return [
@@ -36,10 +21,6 @@ function _rowToUser(array $row): array
     ];
 }
 
-/* ──────────────────────────────────────────────
-   Lecture
-   ────────────────────────────────────────────── */
-
 function findUserByEmail(string $email): ?array
 {
     $email = _normalizeEmail($email);
@@ -49,7 +30,7 @@ function findUserByEmail(string $email): ?array
     $stmt->execute([$email]);
     $row = $stmt->fetch();
 
-    return $row ? $row : null;           // Retourne la ligne brute (mdp inclus)
+    return $row ? $row : null;  // Retourne la ligne brute (mdp inclus)
 }
 
 function findUserById(int $id): ?array
@@ -62,10 +43,6 @@ function findUserById(int $id): ?array
 
     return $row ? _rowToUser($row) : null;
 }
-
-/* ──────────────────────────────────────────────
-   Inscription
-   ────────────────────────────────────────────── */
 
 /**
  * Inscrit un nouvel utilisateur.
@@ -84,7 +61,6 @@ function registerUser(array $payload): array
                  ? $payload['type']
                  : 'client';
 
-    // ── Validation ──
     if ($firstname === '' || $lastname === '' || $email === '' || $phone === '') {
         return ['ok' => false, 'error' => 'Tous les champs sont obligatoires.'];
     }
@@ -98,15 +74,11 @@ function registerUser(array $payload): array
         return ['ok' => false, 'error' => 'Le mot de passe doit contenir au moins 6 caractères.'];
     }
 
-    // ── Unicité email ──
     if (findUserByEmail($email) !== null) {
         return ['ok' => false, 'error' => 'Un compte existe déjà avec cet email.'];
     }
-
-    // ── Hachage du mot de passe ──
     $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
 
-    // ── Insertion ──
     $stmt = getPDO()->prepare(
         'INSERT INTO utilisateur (nom, prenom, email, numTel, mdp, type, created_at)
          VALUES (?, ?, ?, ?, ?, ?, NOW())'
@@ -127,10 +99,6 @@ function registerUser(array $payload): array
     return ['ok' => true, 'user' => $user];
 }
 
-/* ──────────────────────────────────────────────
-   Connexion
-   ────────────────────────────────────────────── */
-
 /**
  * Vérifie les identifiants et retourne l'utilisateur si valide.
  *
@@ -141,7 +109,6 @@ function attemptLogin(string $email, string $password): array
     $row = findUserByEmail($email);
 
     if ($row === null) {
-        // Même temps de réponse qu'un hash incorrect (timing-safe)
         password_verify($password, '$2y$12$invalidhashtopreventtimingattack');
         return ['ok' => false, 'error' => 'Email ou mot de passe incorrect.'];
     }
@@ -150,17 +117,12 @@ function attemptLogin(string $email, string $password): array
         return ['ok' => false, 'error' => 'Email ou mot de passe incorrect.'];
     }
 
-    // Mettre à jour last_login
     getPDO()
         ->prepare('UPDATE utilisateur SET last_login = NOW() WHERE idUtili = ?')
         ->execute([$row['idUtili']]);
 
     return ['ok' => true, 'user' => _rowToUser($row)];
 }
-
-/* ──────────────────────────────────────────────
-   Mise à jour profil
-   ────────────────────────────────────────────── */
 
 /**
  * Met à jour les informations d'un utilisateur.

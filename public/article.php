@@ -58,8 +58,8 @@ if ($product !== null) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Article - BibenQuinc</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="article.css">
+    <link rel="stylesheet" href="views/style/style.css">
+    <link rel="stylesheet" href="views/style/article.css">
 </head>
 <body<?= $isElec ? ' class="elec"' : '' ?>>
 <header class="site-header">
@@ -239,7 +239,7 @@ if ($product !== null) {
     <span class="clear-link" onclick="clearCart()">Vider le panier</span>
   </div>
 </div>
-<script src="script.js"></script>
+<script src="views/script/script.js"></script>
 <script>
 function adjustArticleQty(delta) {
     const input = document.getElementById('articleQty');

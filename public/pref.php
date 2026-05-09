@@ -115,7 +115,7 @@ HTML;
 $pageTitle = 'Mes favoris — BibenQuinc';
 $pageDesc  = 'Gérez votre liste de produits favoris sur BibenQuinc.';
 $activeNav = 'pref';
-$extraCss  = ['profile.css', 'pref.css'];
+$extraCss  = ['views/style/profile.css', 'views/style/pref.css'];
 
 include __DIR__ . '/includes/header.php';
 ?>
