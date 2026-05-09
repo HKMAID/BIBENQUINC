@@ -197,14 +197,17 @@ function productCard($p) {
       <label class="cat-label" for="radio-elec">Électricité</label>
     </div>
 
-    <nav class="nav">
+    <nav class="nav" id="siteNav">
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="contact.php">Contact</a>
       <?php endif; ?>
+    </nav>
+
+    <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
       <?php if ($authUser): ?>
         <div class="user-menu">
           <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" style="background-color: <?= $is_elec ? 'rgba(11, 105, 248, 0.2)' : 'rgba(232, 93, 4, 0.2)' ?>;">
-            <?= htmlspecialchars($authName, ENT_QUOTES) ?>
+            <span><?= htmlspecialchars($authName, ENT_QUOTES) ?></span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -221,7 +224,7 @@ function productCard($p) {
           </div>
         </div>
       <?php else: ?>
-        <a href="cnx.php">Connexion</a>
+        <a href="cnx.php" style="color:#999;text-decoration:none;padding:6px 14px;font-size:14px;font-weight:500;">Connexion</a>
       <?php endif; ?>
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="#" class="cart-btn" onclick="openDrawer(); return false;">
@@ -230,15 +233,33 @@ function productCard($p) {
           <circle cx="20" cy="21" r="1"></circle>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
         </svg>
+        <span class="count-chip" id="chipCount">0</span>
       </a>
       <?php endif; ?>
-    </nav>
+      <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()" aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
   </header>
+
+  <!-- Mobile category switcher (hidden on desktop via CSS) -->
+  <div class="mobile-cat-switcher">
+    <a href="?category=quincaillerie" class="mobile-cat-btn <?= !$is_elec ? 'active' : '' ?>">🔧 Quincaillerie</a>
+    <a href="?category=electricite" class="mobile-cat-btn <?= $is_elec ? 'active' : '' ?>">⚡ Électricité</a>
+  </div>
 
   <div class="h-pager" id="hPager">
     <div class="page" id="page-quinc">
       <div class="page-inner">
-        <div class="sidebar">
+        <button class="sidebar-toggle-btn" id="sidebarToggleQuinc" onclick="toggleSidebar('sidebarQuinc','sidebarToggleQuinc')" style="display:none;margin:12px 16px 0;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          Filtres
+        </button>
+        <div class="sidebar" id="sidebarQuinc">
           <h2>Catégories</h2>
           <ul>
             <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>" class="<?= $subcat === '' ? 'active' : '' ?>">Tous les produits</a></li>
@@ -328,7 +349,11 @@ function productCard($p) {
 
     <div class="page" id="page-elec">
       <div class="page-inner">
-        <div class="sidebar">
+        <button class="sidebar-toggle-btn" id="sidebarToggleElec" onclick="toggleSidebar('sidebarElec','sidebarToggleElec')" style="display:none;margin:12px 16px 0;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          Filtres
+        </button>
+        <div class="sidebar" id="sidebarElec">
           <h2>Catégories</h2>
           <ul>
             <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>" class="<?= $subcat === '' ? 'active' : '' ?>">Tous les produits</a></li>
@@ -530,6 +555,32 @@ function productCard($p) {
 
 <script src="views/script/script.js"></script>
 <script src="views/script/catalogue.js" defer></script>
+<script>
+function toggleMobileNav() {
+  var nav = document.getElementById('siteNav');
+  var btn = document.getElementById('navToggle');
+  var open = nav.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function toggleSidebar(sidebarId, btnId) {
+  var sb = document.getElementById(sidebarId);
+  var btn = document.getElementById(btnId);
+  sb.classList.toggle('mobile-open');
+  btn.textContent = sb.classList.contains('mobile-open') ? '✕ Fermer les filtres' : '☰ Filtres';
+}
+// Show sidebar toggle btn on mobile
+(function() {
+  function checkMobile() {
+    var isMobile = window.innerWidth <= 768;
+    ['sidebarToggleQuinc','sidebarToggleElec'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = isMobile ? 'flex' : 'none';
+    });
+  }
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+})();
+</script>
 <script>
 const DELIVERY_FEES = { home: 600 };
 let deliveryFee = 600;

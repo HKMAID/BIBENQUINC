@@ -45,6 +45,25 @@ form h2 {
   }
 }
 
+@media (max-width: 480px) {
+  .auth-page-card {
+    margin: 20px auto;
+    border-radius: var(--r-md);
+  }
+
+  .auth-page-card .auth-form {
+    padding: 20px 16px 16px;
+  }
+
+  .auth-page-header {
+    padding: 14px 20px;
+  }
+
+  .auth-footer {
+    padding: 10px 20px 14px;
+  }
+}
+
 .auth-page-header {
   background: var(--header-bg);
   padding: 14px 32px;

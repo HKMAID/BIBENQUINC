@@ -1152,6 +1152,9 @@
 @media (max-width: 768px) {
     .dash-layout {
         flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 64px);
+        overflow: visible;
     }
 
     .dash-sidebar {
@@ -1160,21 +1163,41 @@
         position: static;
         border-right: none;
         border-bottom: 1px solid var(--border);
+        overflow-y: visible;
+    }
+
+    .dash-sidebar-inner {
+        padding: 16px 12px;
+        gap: 12px;
+    }
+
+    .dash-sidebar-header {
+        padding-bottom: 12px;
     }
 
     .dash-nav {
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
     }
 
     .dash-nav-group {
         flex-direction: row;
         flex-wrap: wrap;
+        gap: 4px;
     }
 
     .dash-nav-label {
         display: none;
+    }
+
+    .dash-nav-link {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .dashboard-main {
+        overflow: visible;
     }
 
     .dashboard-container {
@@ -1183,10 +1206,19 @@
 
     .dashboard-grid {
         grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .dashboard-header {
+        margin-bottom: 24px;
     }
 
     .dashboard-header h1 {
         font-size: 24px;
+    }
+
+    .dashboard-section {
+        padding: 20px 16px;
     }
 
     .data-table {
@@ -1195,7 +1227,7 @@
 
     .data-table th,
     .data-table td {
-        padding: 12px 10px;
+        padding: 10px 8px;
     }
 
     .fac-meta {
@@ -1211,12 +1243,19 @@
         grid-template-columns: 1fr;
     }
 
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
     .site-footer {
         padding: 16px;
     }
 
     .modal-box {
-        padding: 20px;
+        padding: 20px 16px;
+        margin: 8px;
     }
 
     #toast-container {
@@ -1234,5 +1273,51 @@
 @media (max-width: 480px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
+    }
+
+    .dashboard-container {
+        padding: 16px 12px;
+    }
+
+    .section-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-wrap {
+        min-width: 0;
+    }
+
+    .add-article-form .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stock-summary,
+    .invoice-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .td-actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .modal-overlay {
+        padding: 10px;
+    }
+
+    .modal-box {
+        max-height: 95vh;
+        padding: 16px 12px;
+    }
+
+    .fac-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .fac-value {
+        text-align: left;
     }
 }

@@ -122,8 +122,12 @@ body .site-footer a:hover {
   color: var(--accent);
 }
 
-input#login-password {
-  width: 330px !important;
+/* Prevent overflow on mobile */
+.form-group input,
+.auth-page-card input {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
@@ -132,6 +136,29 @@ input#login-password {
     justify-content: center;
     gap: 12px;
     padding: 20px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page-card {
+    margin: 20px auto;
+    border-radius: var(--r-md);
+  }
+
+  .auth-page-card .auth-form {
+    padding: 20px 18px 16px;
+  }
+
+  .auth-page-header {
+    padding: 18px 20px;
+  }
+
+  .auth-footer {
+    padding: 14px 20px 20px;
+  }
+
+  .auth-form h2 {
+    font-size: 22px;
   }
 }
 

@@ -43,16 +43,20 @@ $flash = $flash ?? null;
       </span>
     </a>
 
-    <nav class="nav">
+    <!-- Nav links (collapsible on mobile) -->
+    <nav class="nav" id="siteNav">
       <a href="catalogue.php" class="<?= $activeNav === 'catalogue' ? 'nav-active' : '' ?>">Catalogue</a>
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
-      <a href="contact.php"   class="<?= $activeNav === 'contact'   ? 'nav-active' : '' ?>">Contact</a>
+      <a href="contact.php" class="<?= $activeNav === 'contact' ? 'nav-active' : '' ?>">Contact</a>
       <?php endif; ?>
+    </nav>
 
+    <!-- Always-visible right section -->
+    <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
       <?php if ($authUser ?? null): ?>
         <div class="user-menu">
           <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
-            <?= htmlspecialchars((string) $authName, ENT_QUOTES) ?>
+            <span><?= htmlspecialchars((string) $authName, ENT_QUOTES) ?></span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -62,14 +66,14 @@ $flash = $flash ?? null;
             <?php if (($authUser['type'] ?? null) === 'professionnel'): ?>
             <a href="dashboard.php" class="<?= $activeNav === 'dashboard' ? 'active' : '' ?>">Tableau de bord</a>
             <?php else: ?>
-            <a href="achats.php"  class="<?= $activeNav === 'achats'  ? 'active' : '' ?>">Mes achats</a>
-            <a href="pref.php"    class="<?= $activeNav === 'pref'    ? 'active' : '' ?>">Mes préférences</a>
+            <a href="achats.php" class="<?= $activeNav === 'achats' ? 'active' : '' ?>">Mes achats</a>
+            <a href="pref.php" class="<?= $activeNav === 'pref' ? 'active' : '' ?>">Mes préférences</a>
             <?php endif; ?>
             <a href="logout.php" style="color:#ef4444">Déconnexion</a>
           </div>
         </div>
       <?php else: ?>
-        <a href="cnx.php">Connexion</a>
+        <a href="cnx.php" class="nav" style="color:#999;text-decoration:none;padding:6px 14px;font-size:14px;font-weight:500;">Connexion</a>
       <?php endif; ?>
 
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
@@ -82,5 +86,22 @@ $flash = $flash ?? null;
         <span class="count-chip" id="chipCount">0</span>
       </a>
       <?php endif; ?>
-    </nav>
+
+      <!-- Hamburger (visible only on mobile via CSS) -->
+      <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()" aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
   </header>
+  <script>
+    function toggleMobileNav() {
+      var nav = document.getElementById('siteNav');
+      var btn = document.getElementById('navToggle');
+      var open = nav.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+  </script>

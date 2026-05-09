@@ -72,14 +72,17 @@ if ($product !== null) {
       </span>
     </div>
 
-    <nav class="nav">
+    <nav class="nav" id="siteNav">
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="contact.php">Contact</a>
       <?php endif; ?>
+    </nav>
+
+    <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
       <?php if ($authUser): ?>
         <div class="user-menu">
           <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" style="background-color: <?= $isElec ? 'rgba(11, 105, 248, 0.2)' : 'rgba(232, 93, 4, 0.2)' ?>;">
-            <?= htmlspecialchars((string) $authName, ENT_QUOTES) ?>
+            <span><?= htmlspecialchars((string) $authName, ENT_QUOTES) ?></span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -96,7 +99,7 @@ if ($product !== null) {
           </div>
         </div>
       <?php else: ?>
-        <a href="cnx.php">Connexion</a>
+        <a href="cnx.php" style="color:#999;text-decoration:none;padding:6px 14px;font-size:14px;font-weight:500;">Connexion</a>
       <?php endif; ?>
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="#" class="cart-btn" onclick="openDrawer(); return false;">
@@ -105,10 +108,26 @@ if ($product !== null) {
           <circle cx="20" cy="21" r="1"></circle>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
         </svg>
+        <span class="count-chip" id="chipCount">0</span>
       </a>
       <?php endif; ?>
-    </nav>
+      <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()" aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
   </header>
+  <script>
+    function toggleMobileNav() {
+      var nav = document.getElementById('siteNav');
+      var btn = document.getElementById('navToggle');
+      var open = nav.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+  </script>
 
 <main class="article-page">
     <a class="back-link" href="catalogue.php">← Retour au catalogue</a>

@@ -714,3 +714,65 @@
     justify-content: center;
   }
 }
+
+@media (max-width: 480px) {
+  .acc-banner {
+    padding: 16px 16px 0;
+  }
+
+  .acc-banner-title {
+    font-size: 18px;
+  }
+
+  .acc-main {
+    padding: 20px 12px 32px;
+  }
+
+  .search-inline input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .search-inline {
+    width: 100%;
+  }
+
+  .pref-search-form {
+    width: 100%;
+  }
+
+  .order-card-foot {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-outline-sm {
+    width: 100%;
+    text-align: center;
+  }
+
+  .order-total {
+    font-size: 18px;
+  }
+
+  .form-section {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .sort-pills {
+    gap: 4px;
+  }
+
+  .sort-pill {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .acc-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+}

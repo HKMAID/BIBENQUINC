@@ -22,10 +22,12 @@
 
 .contact-body {
   background: var(--c-accent);
-  height: 100dvh;
+  min-height: 100dvh;
+  height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   align-items: stretch;
 }
@@ -193,6 +195,7 @@
   display: flex;
   width: 100%;
   overflow: hidden;
+  min-height: 100dvh;
 }
 
 .contact-left {
@@ -498,7 +501,7 @@ textarea.form-input {
 
   .contact-left {
     flex: none;
-    padding: 60px 28px 40px;
+    padding: 60px 28px 36px;
     clip-path: none;
   }
 
@@ -520,9 +523,94 @@ textarea.form-input {
     grid-template-columns: 1fr;
   }
 
+  /* Repositionner les boutons flottants en haut */
+  .contact-back-btn {
+    top: 16px;
+    left: 16px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
   .contact-login-btn {
     top: 16px;
     right: 16px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .contact-app .user-menu {
+    top: 16px;
+    right: 16px;
+  }
+
+  .contact-app .user-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 600px) {
+  .contact-left {
+    padding: 52px 20px 28px;
+  }
+
+  .contact-right {
+    padding: 28px 20px 40px;
+    clip-path: inset(0 0 0 0 round 28px 28px 0 0);
+  }
+
+  .contact-title {
+    font-size: 26px;
+  }
+
+  .contact-desc {
+    font-size: 15px;
+    margin-bottom: 14px;
+  }
+
+  .contact-btn {
+    padding: 15px 24px;
+    font-size: 14px;
+  }
+
+  .contact-logo {
+    transform: scale(1);
+  }
+
+  .contact-subtitle {
+    font-size: 14px;
+  }
+
+  .contact-info {
+    max-width: 100%;
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-left {
+    padding: 48px 16px 24px;
+  }
+
+  .contact-right {
+    padding: 24px 16px 36px;
+    clip-path: inset(0 0 0 0 round 20px 20px 0 0);
+  }
+
+  .contact-title {
+    font-size: 22px;
+  }
+
+  .contact-back-btn,
+  .contact-login-btn,
+  .contact-app .user-btn {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .form-input {
+    padding: 11px 14px;
+    font-size: 14px;
   }
 }
 
