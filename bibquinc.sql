@@ -31,7 +31,9 @@ CREATE TABLE `achat` (
   `idAchat` int(11) NOT NULL,
   `idClient` int(11) NOT NULL,
   `total` int(11) NOT NULL,
-  `dateAchat` datetime DEFAULT NULL
+  `dateAchat` datetime DEFAULT NULL,
+  `modeLivraison` varchar(10) DEFAULT NULL,
+  `wilaya` varchar(5) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------

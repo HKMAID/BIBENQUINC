@@ -105,10 +105,57 @@ function editStock(productId, currentQty) {
     }
 }
 
+/* ─── Modale Facture ─────────────────────────────────────────── */
 function openFacture(idFac, idAchat, client, total, date, etat) {
-    alert(`Facture FAC-${String(idFac).padStart(4, '0')}\nClient : ${client}\nMontant : ${total} DA\nDate : ${date}\nStatut : ${etat}`);
+    const facRef  = 'FAC-' + String(idFac).padStart(4, '0');
+    const achRef  = 'BQ-' + new Date().getFullYear() + '-' + String(idAchat).padStart(4, '0');
+    const isPaid  = etat === 'payée';
+    const badgeCls = isPaid ? 'success' : 'warning';
+    const badgeTxt = isPaid ? 'Payée' : 'Non payée';
+
+    document.getElementById('fac-ref').textContent    = facRef;
+    document.getElementById('fac-achat').textContent  = achRef;
+    document.getElementById('fac-client').textContent = client;
+    document.getElementById('fac-total').textContent  = total + ' DA';
+    document.getElementById('fac-date').textContent   = date;
+    document.getElementById('fac-etat').textContent   = badgeTxt;
+    document.getElementById('fac-etat').className     = 'badge ' + badgeCls;
+
+    // Lien de téléchargement TXT
+    const dlBtn = document.getElementById('fac-download-btn');
+    if (dlBtn) {
+        dlBtn.href     = 'facture_download.php?idFac=' + idFac;
+        dlBtn.download = facRef + '.txt';
+    }
+
+    // Bouton "Marquer payée" — visible seulement si non payée
+    const payForm = document.getElementById('fac-pay-form');
+    if (payForm) {
+        document.getElementById('fac-pay-input').value = idFac;
+        payForm.style.display = isPaid ? 'none' : '';
+    }
+
+    document.getElementById('facture-modal').classList.add('open');
 }
 
+function closeFactureModal() {
+    document.getElementById('facture-modal').classList.remove('open');
+}
+
+// Fermer en cliquant sur l'overlay
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('facture-modal')?.addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeFactureModal();
+    });
+});
+
+/* ─── Modale Promo ───────────────────────────────────────────── */
 function editPromo(productId) {
-    alert('Modification de la promotion pour le produit #' + productId);
+    const form = document.getElementById('add-promo-form');
+    if (!form) return;
+    // Sélectionner l'article correspondant dans le select
+    const sel = form.querySelector('select[name="promo_idart"]');
+    if (sel) sel.value = productId;
+    form.classList.remove('hidden');
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }

@@ -13,24 +13,20 @@ function slugifyProductName(string $name): string
 
 function productPromotions(): array
 {
-    $promos = [
-        'Tournevis électrique' => 2900,
-        'Échelle aluminium 3m' => 5100,
-        'Disjoncteur différentiel' => 3600,
-        'Projecteur LED 50W' => 3700,
-    ];
-    
+    $promos = [];
     try {
         require_once dirname(__DIR__, 2) . '/config/db.php';
         $pdo = getPDO();
-        $stmt = $pdo->query('SELECT a.intitule, p.oldPrice FROM promo p JOIN article a ON p.idArt = a.idArt');
+        $stmt = $pdo->query('SELECT a.intitule, p.oldPrice, p.newPrice FROM promo p JOIN article a ON p.idArt = a.idArt');
         foreach ($stmt as $row) {
-            $promos[$row['intitule']] = (int)$row['oldPrice'];
+            $promos[$row['intitule']] = [
+                'oldPrice' => (int)$row['oldPrice'],
+                'newPrice' => (int)$row['newPrice'],
+            ];
         }
     } catch (Exception $e) {
-        // DB issue, fallback to hardcoded
+        // pas de promotions
     }
-    
     return $promos;
 }
 
@@ -156,21 +152,23 @@ function catalogueProducts(): array
         ];
     }
 
-    $promos = productPromotions();
-    $brands = productBrands();
+    $promos  = productPromotions();
+    $brands  = productBrands();
     $dbNotes = productNotes();
 
     foreach ($products as &$product) {
         $slug = slugifyProductName((string) $product['name']);
-        $product['slug'] = $slug;
+        $product['slug']       = $slug;
         $product['product_id'] = $slug;
-        $product['brand'] = $brands[$product['sub_cat']] ?? 'BibenQuinc';
-        $product['description'] = productDescription($product);
+        $product['brand']      = $brands[$product['sub_cat']] ?? 'BibenQuinc';
+        $product['description']= productDescription($product);
 
         if (isset($promos[$product['name']])) {
-            $product['old_price'] = (int) $promos[$product['name']];
+            $product['old_price'] = $promos[$product['name']]['oldPrice'];
+            // Appliquer le newPrice comme prix courant si promo active
+            $product['price']     = $promos[$product['name']]['newPrice'];
         }
-        
+
         if (isset($dbNotes[$product['name']])) {
             $product['note'] = $dbNotes[$product['name']];
         }

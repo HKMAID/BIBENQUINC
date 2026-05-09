@@ -25,14 +25,21 @@ $userType = $authUser['type'] ?? 'client';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['generate_facture'])) {
         $idAchat = (int) $_POST['generate_facture'];
-        $pdo->prepare("INSERT INTO facture (idAchat, etat, dateFac) VALUES (?, 'non payée', NOW())")
-            ->execute([$idAchat]);
+        // Guard : vérifier que l'achat existe et n'a pas déjà de facture
+        $existing = $pdo->prepare('SELECT idFac FROM facture WHERE idAchat = ? LIMIT 1');
+        $existing->execute([$idAchat]);
+        if (!$existing->fetch()) {
+            $pdo->prepare("INSERT INTO facture (idAchat, etat, dateFac) VALUES (?, 'non payée', NOW())")
+                ->execute([$idAchat]);
+        }
         header('Location: dashboard.php?section=achats');
         exit;
     }
     if (isset($_POST['mark_paid'])) {
         $idFac = (int) $_POST['mark_paid'];
-        $pdo->prepare("UPDATE facture SET etat='payée' WHERE idFac=?")->execute([$idFac]);
+        // Guard : s'assurer que la facture existe et est bien non payée
+        $pdo->prepare("UPDATE facture SET etat='payée' WHERE idFac=? AND etat='non payée'")
+            ->execute([$idFac]);
         header('Location: dashboard.php?section=achats');
         exit;
     }
@@ -154,7 +161,7 @@ function getInvoiceStats(PDO $pdo): array {
 function getPromotions(PDO $pdo, int $limit = 10): array {
     try {
         $stmt = $pdo->prepare("
-            SELECT p.idArt, a.intitule, a.prix, p.oldPrice, p.newPrice,
+            SELECT p.idArt, a.intitule, a.prix, a.photo, p.oldPrice, p.newPrice,
                    ROUND(((p.oldPrice - p.newPrice) / p.oldPrice * 100)) as discount_percent,
                    c.intituleCat
             FROM promo p
@@ -228,6 +235,9 @@ $totalRevenue  = array_sum(array_column($salesData, 'total_sales'));
 try {
     $categories = $pdo->query("SELECT idCat, intituleCat FROM categorie ORDER BY intituleCat")->fetchAll();
 } catch (Exception $e) { $categories = []; }
+try {
+    $allArticles = $pdo->query("SELECT idArt, intitule FROM article ORDER BY intitule")->fetchAll();
+} catch (Exception $e) { $allArticles = []; }
 
 $pageTitle = 'Tableau de bord — BibenQuinc';
 $activeNav = 'dashboard';
@@ -526,6 +536,7 @@ include __DIR__ . '/includes/header.php';
                                     <th>Client</th>
                                     <th>Articles</th>
                                     <th>Total</th>
+                                    <th>Livraison</th>
                                     <th>Date</th>
                                     <th>Facture</th>
                                     <th>Actions</th>
@@ -536,6 +547,7 @@ include __DIR__ . '/includes/header.php';
                             try {
                                 $stmtA = $pdo->query("
                                     SELECT a.idAchat, a.total, a.dateAchat,
+                                           a.modeLivraison, a.wilaya,
                                            u.nom, u.prenom, u.email,
                                            f.idFac, f.etat, f.dateFac,
                                            COUNT(aa.idArticle) as nb_articles
@@ -544,6 +556,7 @@ include __DIR__ . '/includes/header.php';
                                     LEFT JOIN facture f     ON f.idAchat   = a.idAchat
                                     LEFT JOIN article_achat aa ON aa.idAchat = a.idAchat
                                     GROUP BY a.idAchat, a.total, a.dateAchat,
+                                             a.modeLivraison, a.wilaya,
                                              u.nom, u.prenom, u.email,
                                              f.idFac, f.etat, f.dateFac
                                     ORDER BY a.dateAchat DESC
@@ -551,13 +564,19 @@ include __DIR__ . '/includes/header.php';
                                 $achats = $stmtA->fetchAll();
 
                                 if (empty($achats)) {
-                                    echo '<tr><td colspan="7" class="text-center">Aucune commande</td></tr>';
+                                    echo '<tr><td colspan="9" class="text-center">Aucune commande</td></tr>';
                                 } else {
                                     foreach ($achats as $achat):
                                         $orderRef = 'BQ-' . date('Y', strtotime($achat['dateAchat'])) . '-' . str_pad((string)$achat['idAchat'], 4, '0', STR_PAD_LEFT);
                                         $clientName = htmlspecialchars($achat['prenom'] . ' ' . $achat['nom']);
                                         $totalFmt   = number_format((float)$achat['total'], 0, ',', ' ');
                                         $dateFmt    = date('d/m/Y H:i', strtotime($achat['dateAchat']));
+                                        $modeLabel  = match($achat['modeLivraison'] ?? '') {
+                                            'home'      => '🏠 Domicile',
+                                            'zrexpress' => '📦 ZrExpress',
+                                            default     => '—'
+                                        };
+                                        $wilayaLabel = !empty($achat['wilaya']) ? ' (W' . htmlspecialchars($achat['wilaya']) . ')' : '';
                                 ?>
                                 <tr>
                                     <td><strong><?= $orderRef ?></strong></td>
@@ -567,6 +586,7 @@ include __DIR__ . '/includes/header.php';
                                     </td>
                                     <td><?= (int)$achat['nb_articles'] ?> réf.</td>
                                     <td><strong><?= $totalFmt ?> DA</strong></td>
+                                    <td style="white-space:nowrap"><?= $modeLabel . $wilayaLabel ?></td>
                                     <td><?= $dateFmt ?></td>
                                     <td>
                                         <?php if ($achat['idFac']): ?>
@@ -605,7 +625,7 @@ include __DIR__ . '/includes/header.php';
                                 </tr>
                                 <?php endforeach; }
                             } catch (Exception $e) {
-                                echo '<tr><td colspan="7" class="text-center">Erreur : ' . htmlspecialchars($e->getMessage()) . '</td></tr>';
+                                echo '<tr><td colspan="9" class="text-center">Erreur : ' . htmlspecialchars($e->getMessage()) . '</td></tr>';
                             }
                             ?>
                             </tbody>
@@ -638,8 +658,13 @@ include __DIR__ . '/includes/header.php';
 
                     <form method="post" id="add-promo-form" class="add-promo-form hidden">
                         <div>
-                            <label for="promo_idart">Article (ID)</label>
-                            <input id="promo_idart" type="number" name="promo_idart" placeholder="ID article" class="form-input" min="1" required>
+                            <label for="promo_idart">Article *</label>
+                            <select id="promo_idart" name="promo_idart" class="form-input" required>
+                                <option value="">— Sélectionner un article —</option>
+                                <?php foreach ($allArticles as $art): ?>
+                                <option value="<?= (int)$art['idArt'] ?>"><?= htmlspecialchars($art['intitule']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div>
                             <label for="promo_old">Ancien prix (DA)</label>
@@ -653,9 +678,14 @@ include __DIR__ . '/includes/header.php';
                     </form>
 
                     <div class="promotions-grid">
-                        <?php foreach ($promotions as $promo): ?>
+                        <?php foreach ($promotions as $promo):
+                            $promoImg = !empty($promo['photo']) ? htmlspecialchars($promo['photo']) : 'img/tournevis.svg';
+                        ?>
                         <div class="promo-card">
                             <div class="promo-badge">-<?= (int)$promo['discount_percent'] ?>%</div>
+                            <div class="promo-img-wrap">
+                                <img src="<?= $promoImg ?>" alt="<?= htmlspecialchars($promo['intitule']) ?>" class="promo-img" loading="lazy">
+                            </div>
                             <h3><?= htmlspecialchars($promo['intitule']) ?></h3>
                             <p class="category"><?= htmlspecialchars(formatCategoryName($promo['intituleCat'])) ?></p>
                             <div class="promo-prices">
@@ -678,6 +708,44 @@ include __DIR__ . '/includes/header.php';
         </main>
     </div>
 
+
+<!-- Modale Facture -->
+<div id="facture-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="fac-modal-title">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="fac-modal-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Détail de la facture
+            </h3>
+            <button class="modal-close" onclick="closeFactureModal()" aria-label="Fermer">x</button>
+        </div>
+        <div class="modal-body">
+            <div class="fac-grid">
+                <div class="fac-row"><span class="fac-label">N° Facture</span><strong id="fac-ref" class="fac-value accent">—</strong></div>
+                <div class="fac-row"><span class="fac-label">Commande</span><span id="fac-achat" class="fac-value">—</span></div>
+                <div class="fac-row"><span class="fac-label">Client</span><span id="fac-client" class="fac-value">—</span></div>
+                <div class="fac-row"><span class="fac-label">Montant total</span><strong id="fac-total" class="fac-value">—</strong></div>
+                <div class="fac-row"><span class="fac-label">Date facture</span><span id="fac-date" class="fac-value">—</span></div>
+                <div class="fac-row"><span class="fac-label">Statut</span><span id="fac-etat" class="badge warning">—</span></div>
+            </div>
+            <div class="modal-actions">
+                <a id="fac-download-btn" href="#" class="btn-small" style="text-decoration:none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Télécharger (.txt)
+                </a>
+                <div id="fac-pay-form" style="display:none">
+                    <form method="post">
+                        <input type="hidden" name="mark_paid" id="fac-pay-input" value="">
+                        <button type="submit" class="btn-small success-btn" style="width:100%">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            Marquer comme payée
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="views/script/dashboard.js"></script>
 </body>
 </html>

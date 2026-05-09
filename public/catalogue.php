@@ -165,8 +165,8 @@ function productCard($p) {
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="catalogue.css">
+    <link rel="stylesheet" href="views/style/style.css">
+    <link rel="stylesheet" href="views/style/catalogue.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body<?= $is_elec ? ' class="elec"' : '' ?>>
@@ -479,6 +479,7 @@ function productCard($p) {
             <div class="delivery-name">Bureau ZrExpress</div>
             <div class="delivery-desc">Retrait dans un bureau ZrExpress</div>
           </div>
+          <div class="delivery-price" id="zrPrice">—</div>
         </div>
       </label>
 
@@ -527,8 +528,8 @@ function productCard($p) {
   </div>
 </div>
 
-<script src="script.js"></script>
-<script src="catalogue.js" defer></script>
+<script src="views/script/script.js"></script>
+<script src="views/script/catalogue.js" defer></script>
 <script>
 const DELIVERY_FEES = { home: 600 };
 let deliveryFee = 600;
@@ -611,7 +612,8 @@ function submitOrder() {
           <div class="checkout-success-icon">✅</div>
           <h2>Commande confirmée !</h2>
           <p>Votre commande <strong>#${data.orderId}</strong> a été enregistrée avec succès.<br>
-          Livraison : <strong>${mode === 'home' ? 'À domicile' : 'Bureau ZrExpress'}</strong> — ${fmt(deliveryFee)} DA</p>
+          Livraison : <strong>${mode === 'home' ? 'À domicile' : 'Bureau ZrExpress'}</strong> — ${fmt(data.deliveryFee)} DA<br>
+          Total réglé : <strong>${fmt(data.total)} DA</strong></p>
           <button class="checkout-submit-btn" onclick="closeCheckout()" style="width:auto;padding:12px 24px">Fermer</button>
         </div>`;
     } else {
