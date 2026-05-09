@@ -73,9 +73,16 @@ include __DIR__ . '/includes/header.php';
   <div class="acc-banner">
     <div class="acc-banner-inner">
       <div class="acc-avatar"><?= mb_strtoupper(mb_substr($authName, 0, 1)) ?></div>
-      <div>
+      <div style="flex:1">
         <h1 class="acc-banner-title">Mon profil</h1>
         <p class="acc-banner-sub">Gérez vos coordonnées et votre mot de passe</p>
+      </div>
+      <div>
+        <?php $retourUrl = (($authUser['type'] ?? '') === 'professionnel') ? 'dashboard.php' : 'catalogue.php'; ?>
+        <a href="<?= $retourUrl ?>" class="btn-secondary" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2);display:inline-flex;align-items:center;gap:8px;padding:8px 16px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Retour
+        </a>
       </div>
     </div>
   </div>

@@ -12,7 +12,6 @@ if (!$authUser) {
     exit;
 }
 
-/* ── Wishlist actions ── */
 require_once __DIR__ . '/../config/db.php';
 $pdo = getPDO();
 
