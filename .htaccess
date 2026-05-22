@@ -1,15 +1,17 @@
+Options +SymLinksIfOwnerMatch
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Serve existing files/directories
+    # Serve existing files/directories as-is
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Root public/index.php
+    # Redirect root to public/index.php
     RewriteRule ^/?$ public/index.php [L]
 
-    # else public/
+    # Route everything else through public/
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
@@ -17,29 +19,21 @@
 # Charset & MIME types
 AddDefaultCharset UTF-8
 <IfModule mod_mime.c>
-    AddType text/css              .css
+    AddType text/css               .css
     AddType application/javascript .js
-    AddType image/svg+xml         .svg
-    AddType image/webp            .webp
-</IfModule>
-
-# Security headers
-<IfModule mod_headers.c>
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set X-Frame-Options "SAMEORIGIN"
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    AddType image/svg+xml          .svg
+    AddType image/webp             .webp
 </IfModule>
 
 # Caching for static assets
 <IfModule mod_expires.c>
     ExpiresActive On
-    ExpiresByType text/css              "access plus 1 week"
+    ExpiresByType text/css               "access plus 1 week"
     ExpiresByType application/javascript "access plus 1 week"
-    ExpiresByType image/jpeg            "access plus 1 month"
-    ExpiresByType image/png             "access plus 1 month"
-    ExpiresByType image/svg+xml         "access plus 1 month"
-    ExpiresByType image/webp            "access plus 1 month"
+    ExpiresByType image/jpeg             "access plus 1 month"
+    ExpiresByType image/png              "access plus 1 month"
+    ExpiresByType image/svg+xml          "access plus 1 month"
+    ExpiresByType image/webp             "access plus 1 month"
 </IfModule>
 
 # Gzip compression
