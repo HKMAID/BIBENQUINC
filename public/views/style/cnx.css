@@ -122,7 +122,6 @@ body .site-footer a:hover {
   color: var(--accent);
 }
 
-/* Prevent overflow on mobile */
 .form-group input,
 .auth-page-card input {
   max-width: 100%;

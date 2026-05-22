@@ -64,14 +64,30 @@ $quinc_products = sortProducts($quinc_products, $sort);
 $elec_products = sortProducts($elec_products, $sort);
 $is_elec        = $cat_key === 'electricite';
 
-// Pagination
-$items_per_page = 12; // 3 lignes × 4 colonnes
-$current_products = $is_elec ? $elec_products : $quinc_products;
-$total_items = count($current_products);
-$total_pages = ceil($total_items / $items_per_page);
-$page = min($page, max(1, $total_pages));
-$offset = ($page - 1) * $items_per_page;
-$paginated_products = array_slice($current_products, $offset, $items_per_page);
+// Pagination — separate variables for each category
+$items_per_page = 12;
+
+// Quincaillerie pagination
+$quinc_total   = count($quinc_products);
+$quinc_pages   = max(1, (int)ceil($quinc_total / $items_per_page));
+$quinc_page    = !$is_elec ? $page : 1; // only use URL page for active category
+$quinc_page    = min($quinc_page, $quinc_pages);
+$quinc_offset  = ($quinc_page - 1) * $items_per_page;
+$quinc_paged   = array_slice($quinc_products, $quinc_offset, $items_per_page);
+
+// Electricite pagination
+$elec_total    = count($elec_products);
+$elec_pages    = max(1, (int)ceil($elec_total / $items_per_page));
+$elec_page     = $is_elec ? $page : 1;
+$elec_page     = min($elec_page, $elec_pages);
+$elec_offset   = ($elec_page - 1) * $items_per_page;
+$elec_paged    = array_slice($elec_products, $elec_offset, $items_per_page);
+
+// Keep backward-compat aliases for template variables
+$current_products   = $is_elec ? $elec_products : $quinc_products;
+$total_items        = $is_elec ? $elec_total : $quinc_total;
+$total_pages        = $is_elec ? $elec_pages : $quinc_pages;
+$paginated_products = $is_elec ? $elec_paged : $quinc_paged;
 
 function productCard($p) {
     global $wishlist, $authUser;
@@ -91,17 +107,29 @@ function productCard($p) {
         : "<div class=\"price\">{$fmt} <span>DA</span></div>";
     
     $isFav = in_array($p['name'], $wishlist);
-    $wishlistUrl = $isFav ? "pref.php?remove=" . urlencode($p['name']) : "pref.php?add=" . urlencode($p['name']);
     $wishlistClass = $isFav ? "wishlist-btn active" : "wishlist-btn";
     $wishlistTitle = $isFav ? "Retirer des favoris" : "Ajouter aux favoris";
 
     $wishlistBtn = '';
     if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel') {
-        $wishlistBtn = "<a href=\"{$wishlistUrl}\" class=\"{$wishlistClass}\" title=\"{$wishlistTitle}\">
+        if ($authUser) {
+            // AJAX wishlist toggle for logged-in users
+            $wishlistBtn = "<button class=\"{$wishlistClass}\" title=\"{$wishlistTitle}\"
+                data-product-name=\"{$name}\"
+                onclick=\"toggleWishlist(this)\"
+                aria-label=\"{$wishlistTitle}\">
+                <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
+                    <path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"></path>
+                </svg>
+            </button>";
+        } else {
+            // Link to login for guests
+            $wishlistBtn = "<a href=\"cnx.php\" class=\"wishlist-btn\" title=\"Connectez-vous pour sauvegarder\" aria-label=\"Se connecter pour ajouter aux favoris\">
                 <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">
                     <path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"></path>
                 </svg>
             </a>";
+        }
     }
 
     $ratingHtml = "
@@ -197,17 +225,14 @@ function productCard($p) {
       <label class="cat-label" for="radio-elec">Électricité</label>
     </div>
 
-    <nav class="nav" id="siteNav">
+    <nav class="nav">
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="contact.php">Contact</a>
       <?php endif; ?>
-    </nav>
-
-    <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
       <?php if ($authUser): ?>
         <div class="user-menu">
           <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" style="background-color: <?= $is_elec ? 'rgba(11, 105, 248, 0.2)' : 'rgba(232, 93, 4, 0.2)' ?>;">
-            <span><?= htmlspecialchars($authName, ENT_QUOTES) ?></span>
+            <?= htmlspecialchars($authName, ENT_QUOTES) ?>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -224,7 +249,7 @@ function productCard($p) {
           </div>
         </div>
       <?php else: ?>
-        <a href="cnx.php" style="color:#999;text-decoration:none;padding:6px 14px;font-size:14px;font-weight:500;">Connexion</a>
+        <a href="cnx.php">Connexion</a>
       <?php endif; ?>
       <?php if (!($authUser['type'] ?? null) || $authUser['type'] !== 'professionnel'): ?>
       <a href="#" class="cart-btn" onclick="openDrawer(); return false;">
@@ -233,35 +258,26 @@ function productCard($p) {
           <circle cx="20" cy="21" r="1"></circle>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
         </svg>
-        <span class="count-chip" id="chipCount">0</span>
       </a>
       <?php endif; ?>
-      <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()" aria-label="Menu" aria-expanded="false">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
-    </div>
+    </nav>
   </header>
-
-  <!-- Mobile category switcher (hidden on desktop via CSS) -->
-  <div class="mobile-cat-switcher">
-    <a href="?category=quincaillerie" class="mobile-cat-btn <?= !$is_elec ? 'active' : '' ?>">🔧 Quincaillerie</a>
-    <a href="?category=electricite" class="mobile-cat-btn <?= $is_elec ? 'active' : '' ?>">⚡ Électricité</a>
-  </div>
 
   <div class="h-pager" id="hPager">
     <div class="page" id="page-quinc">
       <div class="page-inner">
-        <button class="sidebar-toggle-btn" id="sidebarToggleQuinc" onclick="toggleSidebar('sidebarQuinc','sidebarToggleQuinc')" style="display:none;margin:12px 16px 0;">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
-          Filtres
-        </button>
-        <div class="sidebar" id="sidebarQuinc">
+        <div class="sidebar" id="sidebar-quinc">
+          <!-- Mobile toggle button -->
+          <button class="sidebar-toggle-btn" id="sidebarToggleQuinc"
+                  onclick="toggleSidebarMobile('sidebar-quinc', this)"
+                  aria-expanded="false" aria-controls="sidebar-quinc-list">
+            <span>Catégories</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
           <h2>Catégories</h2>
-          <ul>
+          <ul id="sidebar-quinc-list">
             <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>" class="<?= $subcat === '' ? 'active' : '' ?>">Tous les produits</a></li>
             <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=outillage" class="<?= $subcat === 'outillage' ? 'active' : '' ?>">Outillage</a></li>
             <li><a href="?category=quincaillerie&amp;search=<?= urlencode($search) ?>&amp;cat=visserie" class="<?= $subcat === 'visserie' ? 'active' : '' ?>">Visserie &amp; Boulonnerie</a></li>
@@ -299,20 +315,20 @@ function productCard($p) {
             <?php if (empty($quinc_products)): ?>
               <p style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted)">Aucun article trouvé.</p>
             <?php else: ?>
-              <?php foreach ($paginated_products as $p): echo productCard($p); endforeach ?>
+              <?php foreach ($quinc_paged as $p): echo productCard($p); endforeach ?>
             <?php endif ?>
           </div>
-          <?php if (!empty($quinc_products) && $total_pages > 1): ?>
+          <?php if (!empty($quinc_products) && $quinc_pages > 1): ?>
           <div class="pagination">
-            <?php if ($page > 1): ?>
-              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page - 1 ?>">← Précédent</a>
+            <?php if ($quinc_page > 1): ?>
+              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $quinc_page - 1 ?>">← Précédent</a>
             <?php else: ?>
               <span class="disabled">← Précédent</span>
             <?php endif; ?>
             
             <?php 
-              $start = max(1, $page - 2);
-              $end = min($total_pages, $page + 2);
+              $start = max(1, $quinc_page - 2);
+              $end = min($quinc_pages, $quinc_page + 2);
               if ($start > 1): ?>
                 <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=1">1</a>
               <?php endif;
@@ -320,21 +336,21 @@ function productCard($p) {
                 <span>...</span>
               <?php endif;
               for ($i = $start; $i <= $end; $i++): ?>
-                <?php if ($i === $page): ?>
+                <?php if ($i === $quinc_page): ?>
                   <span class="current"><?= $i ?></span>
                 <?php else: ?>
                   <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $i ?>"><?= $i ?></a>
                 <?php endif; ?>
               <?php endfor;
-              if ($end < $total_pages - 1): ?>
+              if ($end < $quinc_pages - 1): ?>
                 <span>...</span>
               <?php endif;
-              if ($end < $total_pages): ?>
-                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $total_pages ?>"><?= $total_pages ?></a>
+              if ($end < $quinc_pages): ?>
+                <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $quinc_pages ?>"><?= $quinc_pages ?></a>
               <?php endif; ?>
             
-            <?php if ($page < $total_pages): ?>
-              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page + 1 ?>">Suivant →</a>
+            <?php if ($quinc_page < $quinc_pages): ?>
+              <a href="?category=quincaillerie&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $quinc_page + 1 ?>">Suivant →</a>
             <?php else: ?>
               <span class="disabled">Suivant →</span>
             <?php endif; ?>
@@ -349,13 +365,18 @@ function productCard($p) {
 
     <div class="page" id="page-elec">
       <div class="page-inner">
-        <button class="sidebar-toggle-btn" id="sidebarToggleElec" onclick="toggleSidebar('sidebarElec','sidebarToggleElec')" style="display:none;margin:12px 16px 0;">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
-          Filtres
-        </button>
-        <div class="sidebar" id="sidebarElec">
+        <div class="sidebar" id="sidebar-elec">
+          <!-- Mobile toggle button -->
+          <button class="sidebar-toggle-btn" id="sidebarToggleElec"
+                  onclick="toggleSidebarMobile('sidebar-elec', this)"
+                  aria-expanded="false" aria-controls="sidebar-elec-list">
+            <span>Catégories</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
           <h2>Catégories</h2>
-          <ul>
+          <ul id="sidebar-elec-list">
             <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>" class="<?= $subcat === '' ? 'active' : '' ?>">Tous les produits</a></li>
             <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=eclairage" class="<?= $subcat === 'eclairage' ? 'active' : '' ?>">Ampoules &amp; Éclairage</a></li>
             <li><a href="?category=electricite&amp;search=<?= urlencode($search) ?>&amp;cat=cables" class="<?= $subcat === 'cables' ? 'active' : '' ?>">Câbles &amp; Fils</a></li>
@@ -393,20 +414,20 @@ function productCard($p) {
             <?php if (empty($elec_products)): ?>
               <p style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted)">Aucun produit trouvé.</p>
             <?php else: ?>
-              <?php foreach ($paginated_products as $p): echo productCard($p); endforeach ?>
+              <?php foreach ($elec_paged as $p): echo productCard($p); endforeach ?>
             <?php endif ?>
           </div>
-          <?php if (!empty($elec_products) && $total_pages > 1): ?>
+          <?php if (!empty($elec_products) && $elec_pages > 1): ?>
           <div class="pagination">
-            <?php if ($page > 1): ?>
-              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page - 1 ?>">← Précédent</a>
+            <?php if ($elec_page > 1): ?>
+              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $elec_page - 1 ?>">← Précédent</a>
             <?php else: ?>
               <span class="disabled">← Précédent</span>
             <?php endif; ?>
             
             <?php 
-              $start = max(1, $page - 2);
-              $end = min($total_pages, $page + 2);
+              $start = max(1, $elec_page - 2);
+              $end = min($elec_pages, $elec_page + 2);
               if ($start > 1): ?>
                 <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=1">1</a>
               <?php endif;
@@ -414,21 +435,21 @@ function productCard($p) {
                 <span>...</span>
               <?php endif;
               for ($i = $start; $i <= $end; $i++): ?>
-                <?php if ($i === $page): ?>
+                <?php if ($i === $elec_page): ?>
                   <span class="current"><?= $i ?></span>
                 <?php else: ?>
                   <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $i ?>"><?= $i ?></a>
                 <?php endif; ?>
               <?php endfor;
-              if ($end < $total_pages - 1): ?>
+              if ($end < $elec_pages - 1): ?>
                 <span>...</span>
               <?php endif;
-              if ($end < $total_pages): ?>
-                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $total_pages ?>"><?= $total_pages ?></a>
+              if ($end < $elec_pages): ?>
+                <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $elec_pages ?>"><?= $elec_pages ?></a>
               <?php endif; ?>
             
-            <?php if ($page < $total_pages): ?>
-              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $page + 1 ?>">Suivant →</a>
+            <?php if ($elec_page < $elec_pages): ?>
+              <a href="?category=electricite&search=<?= urlencode($search) ?>&cat=<?= urlencode($subcat) ?>&page=<?= $elec_page + 1 ?>">Suivant →</a>
             <?php else: ?>
               <span class="disabled">Suivant →</span>
             <?php endif; ?>
@@ -555,32 +576,6 @@ function productCard($p) {
 
 <script src="views/script/script.js"></script>
 <script src="views/script/catalogue.js" defer></script>
-<script>
-function toggleMobileNav() {
-  var nav = document.getElementById('siteNav');
-  var btn = document.getElementById('navToggle');
-  var open = nav.classList.toggle('open');
-  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-}
-function toggleSidebar(sidebarId, btnId) {
-  var sb = document.getElementById(sidebarId);
-  var btn = document.getElementById(btnId);
-  sb.classList.toggle('mobile-open');
-  btn.textContent = sb.classList.contains('mobile-open') ? '✕ Fermer les filtres' : '☰ Filtres';
-}
-// Show sidebar toggle btn on mobile
-(function() {
-  function checkMobile() {
-    var isMobile = window.innerWidth <= 768;
-    ['sidebarToggleQuinc','sidebarToggleElec'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = isMobile ? 'flex' : 'none';
-    });
-  }
-  checkMobile();
-  window.addEventListener('resize', checkMobile);
-})();
-</script>
 <script>
 const DELIVERY_FEES = { home: 600 };
 let deliveryFee = 600;

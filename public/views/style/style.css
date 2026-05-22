@@ -83,11 +83,10 @@ body {
   transition: background var(--t), border-color var(--t);
 }
 
-/* Hamburger toggle button (hidden on desktop) */
 .nav-toggle {
   display: none;
   background: none;
-  border: 1px solid rgba(255,255,255,.2);
+  border: 1px solid rgba(255, 255, 255, .2);
   border-radius: var(--r-sm);
   color: #fff;
   width: 38px;
@@ -98,9 +97,10 @@ body {
   transition: var(--t);
   flex-shrink: 0;
 }
+
 .nav-toggle:hover {
-  background: rgba(255,255,255,.1);
-  border-color: rgba(255,255,255,.4);
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .4);
 }
 
 .logo {
@@ -1086,7 +1086,6 @@ body.elec .logo-bolt {
   }
 }
 
-/* ====== MOBILE HEADER RESPONSIVE ====== */
 @media (max-width: 768px) {
   .site-header {
     padding: 0 16px;
@@ -1111,7 +1110,7 @@ body.elec .logo-bolt {
     order: 10;
     padding: 8px 0 12px;
     gap: 4px;
-    border-top: 1px solid rgba(255,255,255,.1);
+    border-top: 1px solid rgba(255, 255, 255, .1);
   }
 
   .nav.open {

@@ -10,11 +10,11 @@ function getPDO(): PDO
         return $pdo;
     }
 
-    $host   = '127.0.0.1';
+    $host   = 'sql308.infinityfree.com';
     $port   = '3306';
-    $dbname = 'bibquinc';
-    $user   = 'root';
-    $pass   = '';        
+    $dbname = 'if0_41876321_bq';
+    $user   = 'if0_41876321';
+    $pass   = 'Ezz6NUzaPN';        
     $charset = 'utf8mb4';
 
     $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset={$charset}";

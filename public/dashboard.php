@@ -249,14 +249,6 @@ include __DIR__ . '/includes/header.php';
         <aside class="dash-sidebar" id="dashSidebar">
             <div class="dash-sidebar-inner">
 
-                <div class="dash-sidebar-header">
-                    <div class="dash-avatar"><?= mb_strtoupper(mb_substr($authName, 0, 1)) ?></div>
-                    <div>
-                        <div class="dash-username"><?= htmlspecialchars($authName, ENT_QUOTES) ?></div>
-                        <div class="dash-role">Professionnel</div>
-                    </div>
-                </div>
-
                 <nav class="dash-nav">
                     <div class="dash-nav-group">
                         <span class="dash-nav-label">Gestion</span>
@@ -708,8 +700,6 @@ include __DIR__ . '/includes/header.php';
         </main>
     </div>
 
-
-<!-- Modale Facture -->
 <div id="facture-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="fac-modal-title">
     <div class="modal-box">
         <div class="modal-header">

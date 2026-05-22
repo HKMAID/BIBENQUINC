@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Serve existing files/directories as-is (CSS, JS, images, fonts, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Redirect any request that doesn't match a file to index.php
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Block direct access to PHP includes
+<FilesMatch "^(session|products|auth_db|auth_store|footer|header|ratings_store)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

@@ -30,7 +30,7 @@ function findUserByEmail(string $email): ?array
     $stmt->execute([$email]);
     $row = $stmt->fetch();
 
-    return $row ? $row : null;  // Retourne la ligne brute (mdp inclus)
+    return $row ? $row : null;  
 }
 
 function findUserById(int $id): ?array
@@ -44,12 +44,6 @@ function findUserById(int $id): ?array
     return $row ? _rowToUser($row) : null;
 }
 
-/**
- * Inscrit un nouvel utilisateur.
- *
- * @param array $payload [firstname, lastname, email, phone, password, type?]
- * @return array ['ok'=>bool, 'user'=>array|null, 'error'=>string|null]
- */
 function registerUser(array $payload): array
 {
     $firstname = trim((string) ($payload['firstname'] ?? ''));
@@ -99,11 +93,6 @@ function registerUser(array $payload): array
     return ['ok' => true, 'user' => $user];
 }
 
-/**
- * Vérifie les identifiants et retourne l'utilisateur si valide.
- *
- * @return array ['ok'=>bool, 'user'=>array|null, 'error'=>string|null]
- */
 function attemptLogin(string $email, string $password): array
 {
     $row = findUserByEmail($email);
@@ -124,12 +113,6 @@ function attemptLogin(string $email, string $password): array
     return ['ok' => true, 'user' => _rowToUser($row)];
 }
 
-/**
- * Met à jour les informations d'un utilisateur.
- * Ne modifie le mot de passe que si $newPassword est non vide.
- *
- * @return array ['ok'=>bool, 'error'=>string|null]
- */
 function updateUser(int $id, array $data, string $newPassword = ''): array
 {
     $firstname = trim((string) ($data['firstname'] ?? ''));

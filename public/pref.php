@@ -23,7 +23,16 @@ if (isset($_GET['add'])) {
         $stmt->execute([$authUser['id'], $idArt]);
         setFlash('success', '❤ Produit ajouté aux favoris');
     }
-    header('Location: pref.php'); exit;
+    // Redirect back to referer (catalogue, article page, etc.) or pref.php
+    $back = $_SERVER['HTTP_REFERER'] ?? 'pref.php';
+    // Only allow same-host redirects for security
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    if ($host && strpos($back, $host) !== false) {
+        header('Location: ' . $back);
+    } else {
+        header('Location: pref.php');
+    }
+    exit;
 }
 
 if (isset($_GET['remove'])) {
@@ -34,7 +43,15 @@ if (isset($_GET['remove'])) {
         $stmt->execute([$authUser['id'], $idArt]);
         setFlash('info', 'Produit retiré des favoris');
     }
-    header('Location: pref.php'); exit;
+    // Redirect back to referer or pref.php
+    $back = $_SERVER['HTTP_REFERER'] ?? 'pref.php';
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    if ($host && strpos($back, $host) !== false) {
+        header('Location: ' . $back);
+    } else {
+        header('Location: pref.php');
+    }
+    exit;
 }
 
 $flash = getFlash();

@@ -90,9 +90,61 @@ function updateProductCount() {
   }
 }
 
-document.querySelectorAll('.wishlist-btn').forEach(btn => {
-  btn.addEventListener('click', function (e) {
-    e.preventDefault();
-    this.classList.toggle('active');
+/**
+ * Toggle wishlist via AJAX (add/remove favorite)
+ * Called by wishlist button onclick="toggleWishlist(this)"
+ */
+function toggleWishlist(btn) {
+  const name = btn.dataset.productName;
+  if (!name) return;
+
+  const isFav = btn.classList.contains('active');
+  const action = isFav ? 'remove' : 'add';
+
+  // Optimistic UI update
+  btn.classList.toggle('active');
+  const newTitle = isFav ? 'Ajouter aux favoris' : 'Retirer des favoris';
+  btn.title = newTitle;
+  btn.setAttribute('aria-label', newTitle);
+  btn.disabled = true;
+
+  fetch('wishlist_ajax.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, name })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.ok) {
+      // Revert on error
+      btn.classList.toggle('active');
+      btn.title = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+      btn.setAttribute('aria-label', btn.title);
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        console.warn('Wishlist error:', data.error);
+      }
+    }
+  })
+  .catch(() => {
+    // Revert on network error
+    btn.classList.toggle('active');
+    btn.title = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+    btn.setAttribute('aria-label', btn.title);
+  })
+  .finally(() => {
+    btn.disabled = false;
   });
-});
+}
+
+/**
+ * Toggle the sidebar on mobile
+ */
+function toggleSidebarMobile(sidebarId, btn) {
+  const sidebar = document.getElementById(sidebarId);
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.toggle('mobile-open');
+  btn.classList.toggle('open', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
