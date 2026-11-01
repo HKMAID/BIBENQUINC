@@ -10,11 +10,13 @@ function getPDO(): PDO
         return $pdo;
     }
 
-    $host = $_ENV['DB_HOST'];
-    $port = $_ENV['DB_PORT'];
-    $dbname = $_ENV['DB_NAME'];
-    $user = $_ENV['DB_USER'];
-    $pass = $_ENV['DB_PASS'];  
+    $env = parse_ini_file(__DIR__ . '/../.env');
+
+    $host = $env['DB_HOST'];
+    $port = $env['DB_PORT'];
+    $dbname = $env['DB_NAME'];
+    $user = $env['DB_USER'];
+    $pass = $env['DB_PASS'];  
     $charset = 'utf8mb4';
 
     $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset={$charset}";
